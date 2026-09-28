@@ -9,12 +9,37 @@
 /* Begin PBXBuildFile section */
 		A10000000000000000000011 /* TodoStickyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000021 /* TodoStickyApp.swift */; };
 		A10000000000000000000012 /* StickyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000022 /* StickyView.swift */; };
+		A20000000000000000000001 /* TodoItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000030 /* TodoItem.swift */; };
+		A20000000000000000000002 /* StickyColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000031 /* StickyColor.swift */; };
+		A20000000000000000000003 /* StickyAppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000032 /* StickyAppState.swift */; };
+		A20000000000000000000004 /* TodoStateFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000033 /* TodoStateFile.swift */; };
+		A20000000000000000000005 /* TodoStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000034 /* TodoStore.swift */; };
+		A20000000000000000000006 /* StickyWindowFrame.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000035 /* StickyWindowFrame.swift */; };
+		A20000000000000000000007 /* WindowFramePreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000036 /* WindowFramePreferences.swift */; };
+		A20000000000000000000008 /* TodoInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000037 /* TodoInputView.swift */; };
+		A20000000000000000000009 /* TodoRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000038 /* TodoRowView.swift */; };
+		A2000000000000000000000A /* StickyHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000039 /* StickyHeader.swift */; };
+		A20000000000000000000020 /* TodoStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000040 /* TodoStoreTests.swift */; };
+		A20000000000000000000021 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A20000000000000000000041 /* XCTest.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		A10000000000000000000020 /* TodoSticky.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TodoSticky.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000021 /* TodoStickyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoStickyApp.swift; sourceTree = "<group>"; };
 		A10000000000000000000022 /* StickyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickyView.swift; sourceTree = "<group>"; };
+		A20000000000000000000030 /* TodoItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoItem.swift; sourceTree = "<group>"; };
+		A20000000000000000000031 /* StickyColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickyColor.swift; sourceTree = "<group>"; };
+		A20000000000000000000032 /* StickyAppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickyAppState.swift; sourceTree = "<group>"; };
+		A20000000000000000000033 /* TodoStateFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoStateFile.swift; sourceTree = "<group>"; };
+		A20000000000000000000034 /* TodoStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoStore.swift; sourceTree = "<group>"; };
+		A20000000000000000000035 /* StickyWindowFrame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickyWindowFrame.swift; sourceTree = "<group>"; };
+		A20000000000000000000036 /* WindowFramePreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowFramePreferences.swift; sourceTree = "<group>"; };
+		A20000000000000000000037 /* TodoInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoInputView.swift; sourceTree = "<group>"; };
+		A20000000000000000000038 /* TodoRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoRowView.swift; sourceTree = "<group>"; };
+		A20000000000000000000039 /* StickyHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickyHeader.swift; sourceTree = "<group>"; };
+		A20000000000000000000040 /* TodoStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoStoreTests.swift; sourceTree = "<group>"; };
+		A20000000000000000000041 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = System/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
+		A20000000000000000000051 /* TodoStickyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TodoStickyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -25,6 +50,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A20000000000000000000053 /* TodoStickyTests Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A20000000000000000000021 /* XCTest.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -32,6 +65,7 @@
 			isa = PBXGroup;
 			children = (
 				A10000000000000000000031 /* TodoSticky */,
+				A20000000000000000000050 /* TodoStickyTests */,
 				A10000000000000000000033 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,14 +75,33 @@
 			children = (
 				A10000000000000000000021 /* TodoStickyApp.swift */,
 				A10000000000000000000022 /* StickyView.swift */,
+				A20000000000000000000030 /* TodoItem.swift */,
+				A20000000000000000000031 /* StickyColor.swift */,
+				A20000000000000000000032 /* StickyAppState.swift */,
+				A20000000000000000000033 /* TodoStateFile.swift */,
+				A20000000000000000000034 /* TodoStore.swift */,
+				A20000000000000000000035 /* StickyWindowFrame.swift */,
+				A20000000000000000000036 /* WindowFramePreferences.swift */,
+				A20000000000000000000037 /* TodoInputView.swift */,
+				A20000000000000000000038 /* TodoRowView.swift */,
+				A20000000000000000000039 /* StickyHeader.swift */,
 			);
 			path = TodoSticky;
+			sourceTree = "<group>";
+		};
+		A20000000000000000000050 /* TodoStickyTests */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000040 /* TodoStoreTests.swift */,
+			);
+			path = TodoStickyTests;
 			sourceTree = "<group>";
 		};
 		A10000000000000000000033 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				A10000000000000000000020 /* TodoSticky.app */,
+				A20000000000000000000051 /* TodoStickyTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -72,6 +125,24 @@
 			productName = TodoSticky;
 			productReference = A10000000000000000000020 /* TodoSticky.app */;
 			productType = "com.apple.product-type.application";
+		};
+		A20000000000000000000055 /* TodoStickyTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A20000000000000000000058 /* Build configuration list for PBXNativeTarget "TodoStickyTests" */;
+			buildPhases = (
+				A20000000000000000000052 /* TodoStickyTests Sources */,
+				A20000000000000000000053 /* TodoStickyTests Frameworks */,
+				A20000000000000000000054 /* TodoStickyTests Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A20000000000000000000057 /* PBXTargetDependency */,
+			);
+			name = TodoStickyTests;
+			productName = TodoStickyTests;
+			productReference = A20000000000000000000051 /* TodoStickyTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -100,6 +171,7 @@
 			projectRoot = "";
 			targets = (
 				A10000000000000000000041 /* TodoSticky */,
+				A20000000000000000000055 /* TodoStickyTests */,
 			);
 		};
 /* End PBXProject section */
@@ -114,6 +186,24 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXContainerItemProxy section */
+		A20000000000000000000056 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A10000000000000000000040 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A10000000000000000000041;
+			remoteInfo = TodoSticky;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		A20000000000000000000057 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A10000000000000000000041 /* TodoSticky */;
+			targetProxy = A20000000000000000000056 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin PBXSourcesBuildPhase section */
 		A10000000000000000000034 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -121,6 +211,31 @@
 			files = (
 				A10000000000000000000011 /* TodoStickyApp.swift in Sources */,
 				A10000000000000000000012 /* StickyView.swift in Sources */,
+				A20000000000000000000001 /* TodoItem.swift in Sources */,
+				A20000000000000000000002 /* StickyColor.swift in Sources */,
+				A20000000000000000000003 /* StickyAppState.swift in Sources */,
+				A20000000000000000000004 /* TodoStateFile.swift in Sources */,
+				A20000000000000000000005 /* TodoStore.swift in Sources */,
+				A20000000000000000000006 /* StickyWindowFrame.swift in Sources */,
+				A20000000000000000000007 /* WindowFramePreferences.swift in Sources */,
+				A20000000000000000000008 /* TodoInputView.swift in Sources */,
+				A20000000000000000000009 /* TodoRowView.swift in Sources */,
+				A2000000000000000000000A /* StickyHeader.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A20000000000000000000052 /* TodoStickyTests Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A20000000000000000000020 /* TodoStoreTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A20000000000000000000054 /* TodoStickyTests Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -136,6 +251,7 @@
 				CODE_SIGNING_REQUIRED = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -144,6 +260,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.jasminstudio.TodoSticky;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
 			};
@@ -201,6 +318,51 @@
 			};
 			name = Release;
 		};
+		A20000000000000000000060 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jasminstudio.TodoStickyTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TodoSticky.app/Contents/MacOS/TodoSticky";
+				TEST_TARGET_NAME = TodoSticky;
+			};
+			name = Debug;
+		};
+		A20000000000000000000061 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jasminstudio.TodoStickyTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TodoSticky.app/Contents/MacOS/TodoSticky";
+				TEST_TARGET_NAME = TodoSticky;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -221,6 +383,15 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
+		};
+		A20000000000000000000058 /* Build configuration list for PBXNativeTarget "TodoStickyTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A20000000000000000000060 /* Debug */,
+				A20000000000000000000061 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
 	};
