@@ -35,9 +35,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.isOpaque = false
         window.backgroundColor = .clear
 
-        // The SDK's desktop level places the sticky above the desktop but below
-        // ordinary application windows. It is not an always-on-top level.
-        window.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopWindow)))
+        let desktopIconLevel = Int(CGWindowLevelForKey(.desktopIconWindow))
+        let selectedLevel = desktopIconLevel + 1
+        #if DEBUG
+        let desktopLevel = Int(CGWindowLevelForKey(.desktopWindow))
+        let normalLevel = Int(CGWindowLevelForKey(.normalWindow))
+        print("TodoSticky DEBUG: desktop level = \(desktopLevel)")
+        print("TodoSticky DEBUG: desktop icon level = \(desktopIconLevel)")
+        print("TodoSticky DEBUG: normal level = \(normalLevel)")
+        print("TodoSticky DEBUG: selected level = \(selectedLevel)")
+        #endif
+        window.level = NSWindow.Level(rawValue: selectedLevel)
         window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
 
         let hostingView = NSHostingView(rootView: StickyView())
