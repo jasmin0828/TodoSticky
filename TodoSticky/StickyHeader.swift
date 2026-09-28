@@ -19,6 +19,9 @@ final class StickyHeaderView: NSView {
     private let titleLabel = NSTextField(labelWithString: "待办")
     private let colorButton = NSButton()
     private var onSelectColor: ((StickyColor) -> Void)?
+    #if DEBUG
+    private static var didLogColorMenuDiagnostics = false
+    #endif
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -85,28 +88,97 @@ final class StickyHeaderView: NSView {
             item.target = self
             item.representedObject = color.rawValue
             item.image = makeColorSwatch(for: color)
+            if #available(macOS 27.0, *) {
+                item.preferredImageVisibility = .visible
+            }
             item.state = color == selectedColor ? .on : .off
             menu.addItem(item)
         }
+
+        #if DEBUG
+        if !Self.didLogColorMenuDiagnostics {
+            logColorMenuDiagnostics(menu)
+            Self.didLogColorMenuDiagnostics = true
+        }
+        #endif
 
         return menu
     }
 
     private func makeColorSwatch(for color: StickyColor) -> NSImage {
         let size = NSSize(width: 12, height: 12)
-        let fillColor = NSColor(color.color)
-        return NSImage(size: size, flipped: false) { bounds in
-            let circle = NSRect(x: bounds.midX - 5, y: bounds.midY - 5, width: 10, height: 10)
-            let path = NSBezierPath(ovalIn: circle)
-            path.lineWidth = 0.75
+        let pixelSize = 24
+        let image: NSImage
 
-            fillColor.setFill()
-            path.fill()
-            NSColor.black.withAlphaComponent(0.16).setStroke()
-            path.stroke()
-            return true
+        if let context = CGContext(
+            data: nil,
+            width: pixelSize,
+            height: pixelSize,
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) {
+            context.clear(CGRect(x: 0, y: 0, width: pixelSize, height: pixelSize))
+            let circle = CGRect(x: 2.5, y: 2.5, width: 19, height: 19)
+            context.setFillColor(NSColor(color.color).cgColor)
+            context.fillEllipse(in: circle)
+            context.setStrokeColor(NSColor.black.withAlphaComponent(0.18).cgColor)
+            context.setLineWidth(1)
+            context.strokeEllipse(in: circle)
+
+            if let cgImage = context.makeImage() {
+                image = NSImage(cgImage: cgImage, size: size)
+            } else {
+                image = NSImage(size: size)
+            }
+        } else {
+            image = NSImage(size: size)
+        }
+
+        image.isTemplate = false
+        return image
+    }
+
+    #if DEBUG
+    private func logColorMenuDiagnostics(_ menu: NSMenu) {
+        let colorItems = menu.items.filter { $0.representedObject as? String != nil }
+        print("TodoSticky DEBUG: color menu item count = \(colorItems.count)")
+
+        for item in colorItems {
+            let image = item.image
+            let cgImage = image?.cgImage(forProposedRect: nil, context: nil, hints: nil)
+            let bitmap = cgImage.map(NSBitmapImageRep.init(cgImage:))
+            let centerColor = bitmap?.colorAt(x: 12, y: 12)
+            let cornerColor = bitmap?.colorAt(x: 0, y: 0)
+            let imageSize = image.map { "\(Int($0.size.width))x\(Int($0.size.height))pt" } ?? "missing"
+            let representationTypes = image?.representations
+                .map { String(describing: type(of: $0)) }
+                .joined(separator: ",") ?? "none"
+            let templateState = image.map { String($0.isTemplate) } ?? "missing"
+            let selectedState = item.state == .on ? "on" : "off"
+            let imageVisibility: String
+            if #available(macOS 27.0, *) {
+                imageVisibility = String(describing: item.preferredImageVisibility)
+            } else {
+                imageVisibility = "unavailable"
+            }
+
+            print(
+                "TodoSticky DEBUG: color item \(item.title) state=\(selectedState) " +
+                    "image=\(imageSize) template=\(templateState) visibility=\(imageVisibility) " +
+                    "reps=\(representationTypes) pixels=\(bitmap?.pixelsWide ?? 0)x\(bitmap?.pixelsHigh ?? 0) " +
+                    "centerRGBA=\(rgbaDescription(centerColor)) cornerRGBA=\(rgbaDescription(cornerColor))"
+            )
         }
     }
+
+    private func rgbaDescription(_ color: NSColor?) -> String {
+        guard let color = color?.usingColorSpace(.deviceRGB) else { return "unavailable" }
+        return "\(Int(color.redComponent * 255)),\(Int(color.greenComponent * 255))," +
+            "\(Int(color.blueComponent * 255)),\(Int(color.alphaComponent * 255))"
+    }
+    #endif
 
     @objc private func showColorMenu() {
         colorButton.menu?.popUp(positioning: nil, at: NSPoint(x: 0, y: colorButton.bounds.minY), in: colorButton)
