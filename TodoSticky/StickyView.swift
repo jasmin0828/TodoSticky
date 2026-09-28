@@ -13,6 +13,7 @@ struct StickyView: View {
                     .fill(store.selectedColor.color)
                     .shadow(color: .black.opacity(0.12), radius: 8, y: 3)
                     .padding(8)
+                    .ignoresSafeArea(.container, edges: .top)
 
                 VStack(alignment: .leading, spacing: compact ? 6 : 9) {
                     StickyHeader(

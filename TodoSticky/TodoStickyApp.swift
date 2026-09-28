@@ -35,6 +35,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.title = "Todo Sticky"
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
+        window.standardWindowButton(.closeButton)?.isHidden = true
+        window.standardWindowButton(.miniaturizeButton)?.isHidden = true
+        window.standardWindowButton(.zoomButton)?.isHidden = true
         window.isMovable = true
         window.isMovableByWindowBackground = true
         window.minSize = NSSize(width: 320, height: 180)
