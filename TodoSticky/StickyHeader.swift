@@ -17,12 +17,13 @@ struct StickyHeader: NSViewRepresentable {
 @MainActor
 final class StickyHeaderView: NSView, NSMenuDelegate {
     private let titleLabel = NSTextField(labelWithString: "待办")
+    private let closeButton = StickyColorButton()
     private let colorButton = StickyColorButton()
     private var onSelectColor: ((StickyColor) -> Void)?
     private var selectedColor: StickyColor?
     private var isPointerInside = false
     private var isColorMenuOpen = false
-    private var isColorButtonVisible = false
+    private var areHeaderControlsVisible = false
     private var isKeyboardFocused = false
     private var isVoiceOverEnabled = NSWorkspace.shared.isVoiceOverEnabled
     private var accessibilityOptionsObserver: NSObjectProtocol?
@@ -56,7 +57,7 @@ final class StickyHeaderView: NSView, NSMenuDelegate {
             }
         }
 
-        updateColorButtonVisibility(reason: "swiftui-update")
+        updateHeaderControlVisibility(reason: "swiftui-update")
     }
 
     override func viewDidMoveToWindow() {
@@ -69,7 +70,7 @@ final class StickyHeaderView: NSView, NSMenuDelegate {
             observeAccessibilityOptions()
             installWindowHoverTracking()
         }
-        updateColorButtonVisibility(reason: "view-did-move-to-window")
+        updateHeaderControlVisibility(reason: "view-did-move-to-window")
     }
 
     private func configureHeader() {
@@ -79,6 +80,23 @@ final class StickyHeaderView: NSView, NSMenuDelegate {
         titleLabel.textColor = NSColor.black.withAlphaComponent(0.78)
         titleLabel.lineBreakMode = .byTruncatingTail
         titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        closeButton.image = NSImage(systemSymbolName: "xmark", accessibilityDescription: "关闭 TodoSticky")?
+            .withSymbolConfiguration(.init(pointSize: 16, weight: .semibold))
+        closeButton.contentTintColor = NSColor.black.withAlphaComponent(0.48)
+        closeButton.isHidden = true
+        closeButton.alphaValue = 1
+        closeButton.isEnabled = true
+        closeButton.isBordered = false
+        closeButton.focusRingType = .none
+        closeButton.target = self
+        closeButton.action = #selector(closeStickyWindow)
+        closeButton.setAccessibilityLabel("关闭 TodoSticky")
+        closeButton.toolTip = "关闭 TodoSticky"
+        closeButton.onKeyboardFocusChanged = { [weak self] isFocused in
+            self?.isKeyboardFocused = isFocused
+            self?.updateHeaderControlVisibility(reason: "keyboard-focus-\(isFocused)")
+        }
 
         colorButton.image = NSImage(systemSymbolName: "ellipsis", accessibilityDescription: "便签颜色")?
             .withSymbolConfiguration(.init(pointSize: 16, weight: .semibold))
@@ -94,18 +112,24 @@ final class StickyHeaderView: NSView, NSMenuDelegate {
         colorButton.toolTip = "便签颜色"
         colorButton.onKeyboardFocusChanged = { [weak self] isFocused in
             self?.isKeyboardFocused = isFocused
-            self?.updateColorButtonVisibility(reason: "keyboard-focus-\(isFocused)")
+            self?.updateHeaderControlVisibility(reason: "keyboard-focus-\(isFocused)")
         }
 
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        closeButton.translatesAutoresizingMaskIntoConstraints = false
         colorButton.translatesAutoresizingMaskIntoConstraints = false
         addSubview(titleLabel)
+        addSubview(closeButton)
         addSubview(colorButton)
 
         NSLayoutConstraint.activate([
             titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor),
             titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: colorButton.leadingAnchor, constant: -12),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: closeButton.leadingAnchor, constant: -12),
+            closeButton.trailingAnchor.constraint(equalTo: colorButton.leadingAnchor, constant: -8),
+            closeButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+            closeButton.widthAnchor.constraint(equalToConstant: 28),
+            closeButton.heightAnchor.constraint(equalToConstant: 28),
             colorButton.trailingAnchor.constraint(equalTo: trailingAnchor),
             colorButton.centerYAnchor.constraint(equalTo: centerYAnchor),
             colorButton.widthAnchor.constraint(equalToConstant: 28),
@@ -124,7 +148,7 @@ final class StickyHeaderView: NSView, NSMenuDelegate {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.isVoiceOverEnabled = NSWorkspace.shared.isVoiceOverEnabled
-                self.updateColorButtonVisibility(reason: "voiceover-state-changed")
+                self.updateHeaderControlVisibility(reason: "voiceover-state-changed")
             }
         }
     }
@@ -180,14 +204,14 @@ final class StickyHeaderView: NSView, NSMenuDelegate {
 
     private func setPointerInside(_ isInside: Bool, reason: String) {
         let pointerBefore = isPointerInside
-        let visibilityBefore = isColorButtonVisible
+        let visibilityBefore = areHeaderControlsVisible
         isPointerInside = isInside
-        updateColorButtonVisibility(reason: reason)
+        updateHeaderControlVisibility(reason: reason)
         #if DEBUG
         logHoverDiagnostic(
             "pointer callback=\(reason) pointer=\(pointerBefore)->\(isPointerInside) " +
-                "visible=\(visibilityBefore)->\(isColorButtonVisible) " +
-                "liveButton=\(isLiveColorButton)"
+                "visible=\(visibilityBefore)->\(areHeaderControlsVisible) " +
+                "liveControls=\(areHeaderControlsLive)"
         )
         #endif
     }
@@ -200,9 +224,12 @@ final class StickyHeaderView: NSView, NSMenuDelegate {
         setPointerInside(false, reason: "mouseExited")
     }
 
-    private var isLiveColorButton: Bool {
+    private var areHeaderControlsLive: Bool {
         guard let window else { return false }
-        return colorButton.window === window && colorButton.superview === self
+        return closeButton.window === window
+            && colorButton.window === window
+            && closeButton.superview === self
+            && colorButton.superview === self
     }
 
     #if DEBUG
@@ -212,11 +239,12 @@ final class StickyHeaderView: NSView, NSMenuDelegate {
         let diagnostic =
             "TodoSticky DEBUG: hover \(message) " +
                 "window=\(window?.windowNumber ?? -1) " +
-                "header=\(debugIdentity(self)) button=\(debugIdentity(colorButton)) " +
-                "buttonLive=\(isLiveColorButton) pointerInside=\(isPointerInside) " +
+                "header=\(debugIdentity(self)) closeButton=\(debugIdentity(closeButton)) " +
+                "colorButton=\(debugIdentity(colorButton)) controlsLive=\(areHeaderControlsLive) " +
                 "menuOpen=\(isColorMenuOpen) keyboardFocused=\(isKeyboardFocused) " +
-                "voiceOver=\(isVoiceOverEnabled) buttonVisible=\(isColorButtonVisible) " +
-                "buttonAlpha=\(colorButton.alphaValue)"
+                "voiceOver=\(isVoiceOverEnabled) controlsVisible=\(areHeaderControlsVisible) " +
+                "closeHidden=\(closeButton.isHidden) colorHidden=\(colorButton.isHidden) " +
+                "colorAlpha=\(colorButton.alphaValue)"
         FileHandle.standardError.write(Data("\(diagnostic)\n".utf8))
     }
 
@@ -273,32 +301,44 @@ final class StickyHeaderView: NSView, NSMenuDelegate {
         }
     }
 
-    private func updateColorButtonVisibility(reason: String) {
+    private func updateHeaderControlVisibility(reason: String) {
         let shouldBeVisible = isPointerInside
             || isColorMenuOpen
             || isKeyboardFocused
             || isVoiceOverEnabled
-        let visibilityBefore = isColorButtonVisible
-        let hiddenBefore = colorButton.isHidden
-        isColorButtonVisible = shouldBeVisible
+        let visibilityBefore = areHeaderControlsVisible
+        let closeHiddenBefore = closeButton.isHidden
+        let colorHiddenBefore = colorButton.isHidden
+        areHeaderControlsVisible = shouldBeVisible
         if shouldBeVisible {
+            closeButton.isHidden = false
+            closeButton.alphaValue = 1
+            closeButton.isEnabled = true
             colorButton.isHidden = false
             colorButton.alphaValue = 1
             colorButton.isEnabled = true
         } else {
+            closeButton.isHidden = true
             colorButton.isHidden = true
         }
 
-        if visibilityBefore != shouldBeVisible || hiddenBefore != !shouldBeVisible {
+        if visibilityBefore != shouldBeVisible
+            || closeHiddenBefore != !shouldBeVisible
+            || colorHiddenBefore != !shouldBeVisible {
             needsLayout = true
             layoutSubtreeIfNeeded()
+            closeButton.needsDisplay = true
             colorButton.needsDisplay = true
             needsDisplay = true
         }
 
         #if DEBUG
         if reason == "mouseEntered" || reason == "mouseExited" {
-            logColorButtonGeometry(event: reason, hiddenBefore: hiddenBefore)
+            logHeaderControlGeometry(
+                event: reason,
+                closeHiddenBefore: closeHiddenBefore,
+                colorHiddenBefore: colorHiddenBefore
+            )
         }
         #endif
 
@@ -306,19 +346,31 @@ final class StickyHeaderView: NSView, NSMenuDelegate {
             #if DEBUG
             logHoverDiagnostic(
                 "visibility updated reason=\(reason) visible=\(visibilityBefore)->\(shouldBeVisible) " +
-                    "hidden=\(hiddenBefore)->\(colorButton.isHidden) liveButton=\(isLiveColorButton)"
+                    "closeHidden=\(closeHiddenBefore)->\(closeButton.isHidden) " +
+                    "colorHidden=\(colorHiddenBefore)->\(colorButton.isHidden) " +
+                    "liveControls=\(areHeaderControlsLive)"
             )
             #endif
         }
     }
 
     #if DEBUG
-    private func logColorButtonGeometry(event: String, hiddenBefore: Bool) {
+    private func logHeaderControlGeometry(
+        event: String,
+        closeHiddenBefore: Bool,
+        colorHiddenBefore: Bool
+    ) {
+        let closeFrame = closeButton.convert(closeButton.bounds, to: self)
         let buttonFrame = colorButton.convert(colorButton.bounds, to: self)
         let visibleHeaderBounds = visibleRect.intersection(bounds)
+        let closeIntersection = closeFrame.intersection(visibleHeaderBounds)
         let visibleIntersection = buttonFrame.intersection(visibleHeaderBounds)
+        let closeWindowNumber = closeButton.window?.windowNumber ?? -1
         let buttonWindowNumber = colorButton.window?.windowNumber ?? -1
         let headerWindowNumber = window?.windowNumber ?? -1
+        let closeSuperview = closeButton.superview.map {
+            "\(type(of: $0))@\(debugIdentity($0))"
+        } ?? "nil"
         let tintDescription = colorButton.contentTintColor.map { String(describing: $0) } ?? "nil"
         let superviewDescription = colorButton.superview.map {
             "\(type(of: $0))@\(debugIdentity($0))"
@@ -326,15 +378,24 @@ final class StickyHeaderView: NSView, NSMenuDelegate {
 
         let diagnostic =
             "TodoSticky DEBUG: hover geometry event=\(event) " +
-                "header=\(debugIdentity(self)) button=\(debugIdentity(colorButton)) " +
-                "hidden=\(hiddenBefore)->\(colorButton.isHidden) alpha=\(colorButton.alphaValue) " +
-                "enabled=\(colorButton.isEnabled) frame=\(NSStringFromRect(buttonFrame)) " +
-                "bounds=\(NSStringFromRect(colorButton.bounds)) " +
+                "header=\(debugIdentity(self)) closeButton=\(debugIdentity(closeButton)) " +
+                "colorButton=\(debugIdentity(colorButton)) " +
+                "closeHidden=\(closeHiddenBefore)->\(closeButton.isHidden) " +
+                "colorHidden=\(colorHiddenBefore)->\(colorButton.isHidden) " +
+                "closeFrame=\(NSStringFromRect(closeFrame)) " +
+                "closeBounds=\(NSStringFromRect(closeButton.bounds)) " +
+                "closeIntersection=\(NSStringFromRect(closeIntersection)) " +
+                "closeEnabled=\(closeButton.isEnabled) closeAlpha=\(closeButton.alphaValue) " +
+                "colorFrame=\(NSStringFromRect(buttonFrame)) " +
+                "colorBounds=\(NSStringFromRect(colorButton.bounds)) " +
+                "colorIntersection=\(NSStringFromRect(visibleIntersection)) " +
+                "colorEnabled=\(colorButton.isEnabled) colorAlpha=\(colorButton.alphaValue) " +
                 "headerBounds=\(NSStringFromRect(bounds)) " +
                 "visibleHeaderBounds=\(NSStringFromRect(visibleHeaderBounds)) " +
-                "buttonVisibleIntersection=\(NSStringFromRect(visibleIntersection)) " +
+                "closeSuperview=\(closeSuperview) " +
                 "superview=\(superviewDescription) " +
-                "buttonWindow=\(buttonWindowNumber) headerWindow=\(headerWindowNumber) " +
+                "closeWindow=\(closeWindowNumber) colorWindow=\(buttonWindowNumber) " +
+                "headerWindow=\(headerWindowNumber) " +
                 "sameWindow=\(buttonWindowNumber >= 0 && buttonWindowNumber == headerWindowNumber) " +
                 "tint=\(tintDescription)"
         FileHandle.standardError.write(Data("\(diagnostic)\n".utf8))
@@ -420,6 +481,10 @@ final class StickyHeaderView: NSView, NSMenuDelegate {
         colorButton.menu?.popUp(positioning: nil, at: NSPoint(x: 0, y: colorButton.bounds.minY), in: colorButton)
     }
 
+    @objc private func closeStickyWindow() {
+        window?.performClose(nil)
+    }
+
     @objc private func selectColor(_ sender: NSMenuItem) {
         guard let rawValue = sender.representedObject as? String,
               let color = StickyColor(rawValue: rawValue) else { return }
@@ -432,7 +497,7 @@ final class StickyHeaderView: NSView, NSMenuDelegate {
         #if DEBUG
         logHoverDiagnostic("menuWillOpen")
         #endif
-        updateColorButtonVisibility(reason: "menu-will-open")
+        updateHeaderControlVisibility(reason: "menu-will-open")
     }
 
     func menuDidClose(_ menu: NSMenu) {
@@ -456,6 +521,10 @@ final class StickyHeaderView: NSView, NSMenuDelegate {
         guard bounds.contains(point) else { return nil }
 
         if let control = super.hitTest(point) as? NSControl, control.isEnabled {
+            if control === closeButton, closeButton.isHidden {
+                return self
+            }
+
             if control === colorButton, colorButton.isHidden {
                 return self
             }
