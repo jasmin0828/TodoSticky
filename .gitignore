@@ -1,0 +1,13 @@
+# Xcode user-specific and generated files
+xcuserdata/
+*.xcuserstate
+DerivedData/
+.derivedData/
+build/
+
+# macOS metadata
+.DS_Store
+
+# Swift Package Manager artifacts, kept out if introduced later
+.build/
+Package.resolved
