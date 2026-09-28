@@ -3,39 +3,36 @@ import SwiftUI
 
 struct StickyHeader: NSViewRepresentable {
     let selectedColor: StickyColor
-    let shouldRevealColorControl: Bool
     let onSelectColor: (StickyColor) -> Void
-    let onMenuVisibilityChanged: (Bool) -> Void
 
     func makeNSView(context: Context) -> StickyHeaderView {
         StickyHeaderView()
     }
 
     func updateNSView(_ nsView: StickyHeaderView, context: Context) {
-        nsView.update(
-            selectedColor: selectedColor,
-            shouldRevealColorControl: shouldRevealColorControl,
-            onSelectColor: onSelectColor,
-            onMenuVisibilityChanged: onMenuVisibilityChanged
-        )
+        nsView.update(selectedColor: selectedColor, onSelectColor: onSelectColor)
     }
 }
 
 @MainActor
 final class StickyHeaderView: NSView, NSMenuDelegate {
+    private static let hiddenColorButtonAlpha: CGFloat = 0.001
+
     private let titleLabel = NSTextField(labelWithString: "待办")
     private let colorButton = StickyColorButton()
     private var onSelectColor: ((StickyColor) -> Void)?
-    private var onMenuVisibilityChanged: ((Bool) -> Void)?
     private var selectedColor: StickyColor?
-    private var shouldRevealColorControl = false
+    private var isPointerInside = false
     private var isColorMenuOpen = false
     private var isColorButtonVisible = false
     private var isKeyboardFocused = false
     private var isVoiceOverEnabled = NSWorkspace.shared.isVoiceOverEnabled
     private var accessibilityOptionsObserver: NSObjectProtocol?
+    private weak var hoverTrackingHost: NSView?
+    private var windowHoverTrackingArea: NSTrackingArea?
     #if DEBUG
     private static var didLogColorMenuDiagnostics = false
+    private var hoverDiagnosticCount = 0
     #endif
 
     override init(frame frameRect: NSRect) {
@@ -48,15 +45,8 @@ final class StickyHeaderView: NSView, NSMenuDelegate {
         configureHeader()
     }
 
-    func update(
-        selectedColor: StickyColor,
-        shouldRevealColorControl: Bool,
-        onSelectColor: @escaping (StickyColor) -> Void,
-        onMenuVisibilityChanged: @escaping (Bool) -> Void
-    ) {
+    func update(selectedColor: StickyColor, onSelectColor: @escaping (StickyColor) -> Void) {
         self.onSelectColor = onSelectColor
-        self.onMenuVisibilityChanged = onMenuVisibilityChanged
-        self.shouldRevealColorControl = shouldRevealColorControl
 
         if colorButton.menu == nil {
             self.selectedColor = selectedColor
@@ -68,17 +58,20 @@ final class StickyHeaderView: NSView, NSMenuDelegate {
             }
         }
 
-        updateColorButtonVisibility()
+        updateColorButtonVisibility(reason: "swiftui-update")
     }
 
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         if window == nil {
             removeAccessibilityOptionsObserver()
+            removeWindowHoverTracking()
+            setPointerInside(false, reason: "detached-from-window")
         } else {
             observeAccessibilityOptions()
+            installWindowHoverTracking()
         }
-        updateColorButtonVisibility()
+        updateColorButtonVisibility(reason: "view-did-move-to-window")
     }
 
     private func configureHeader() {
@@ -91,8 +84,8 @@ final class StickyHeaderView: NSView, NSMenuDelegate {
 
         colorButton.image = NSImage(systemSymbolName: "ellipsis", accessibilityDescription: "便签颜色")?
             .withSymbolConfiguration(.init(pointSize: 16, weight: .semibold))
-        // Keep the native button accessible; hide only its template glyph while idle.
-        colorButton.contentTintColor = NSColor.black.withAlphaComponent(0)
+        colorButton.contentTintColor = NSColor.black.withAlphaComponent(0.48)
+        colorButton.alphaValue = Self.hiddenColorButtonAlpha
         colorButton.isBordered = false
         colorButton.focusRingType = .none
         colorButton.target = self
@@ -101,7 +94,7 @@ final class StickyHeaderView: NSView, NSMenuDelegate {
         colorButton.toolTip = "便签颜色"
         colorButton.onKeyboardFocusChanged = { [weak self] isFocused in
             self?.isKeyboardFocused = isFocused
-            self?.updateColorButtonVisibility()
+            self?.updateColorButtonVisibility(reason: "keyboard-focus-\(isFocused)")
         }
 
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -131,10 +124,106 @@ final class StickyHeaderView: NSView, NSMenuDelegate {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.isVoiceOverEnabled = NSWorkspace.shared.isVoiceOverEnabled
-                self.updateColorButtonVisibility()
+                self.updateColorButtonVisibility(reason: "voiceover-state-changed")
             }
         }
     }
+
+    private func installWindowHoverTracking() {
+        removeWindowHoverTracking()
+
+        guard let window, let contentView = window.contentView else {
+            #if DEBUG
+            logHoverDiagnostic("tracking install failed: no window contentView")
+            #endif
+            return
+        }
+
+        let trackingArea = NSTrackingArea(
+            rect: .zero,
+            options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
+            owner: self,
+            userInfo: nil
+        )
+        contentView.addTrackingArea(trackingArea)
+        hoverTrackingHost = contentView
+        windowHoverTrackingArea = trackingArea
+
+        #if DEBUG
+        logHoverDiagnostic(
+            "tracking installed host=\(debugIdentity(contentView)) " +
+                "bounds=\(NSStringFromRect(contentView.bounds)) " +
+                "visibleRect=\(NSStringFromRect(contentView.visibleRect)) " +
+                "options=mouseEnteredAndExited,activeAlways,inVisibleRect"
+        )
+        #endif
+
+        setPointerInside(pointerIsOverWindowContent(), reason: "tracking-installed-pointer-snapshot")
+    }
+
+    private func removeWindowHoverTracking() {
+        guard let windowHoverTrackingArea else { return }
+        hoverTrackingHost?.removeTrackingArea(windowHoverTrackingArea)
+        self.windowHoverTrackingArea = nil
+        hoverTrackingHost = nil
+        #if DEBUG
+        logHoverDiagnostic("tracking removed")
+        #endif
+    }
+
+    private func pointerIsOverWindowContent() -> Bool {
+        guard let window, let contentView = window.contentView else { return false }
+        let windowPoint = window.convertPoint(fromScreen: NSEvent.mouseLocation)
+        let contentPoint = contentView.convert(windowPoint, from: nil)
+        return contentView.bounds.contains(contentPoint)
+    }
+
+    private func setPointerInside(_ isInside: Bool, reason: String) {
+        let pointerBefore = isPointerInside
+        let visibilityBefore = isColorButtonVisible
+        isPointerInside = isInside
+        updateColorButtonVisibility(reason: reason)
+        #if DEBUG
+        logHoverDiagnostic(
+            "pointer callback=\(reason) pointer=\(pointerBefore)->\(isPointerInside) " +
+                "visible=\(visibilityBefore)->\(isColorButtonVisible) " +
+                "liveButton=\(isLiveColorButton)"
+        )
+        #endif
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        setPointerInside(true, reason: "mouseEntered")
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        setPointerInside(false, reason: "mouseExited")
+    }
+
+    private var isLiveColorButton: Bool {
+        guard let window else { return false }
+        return colorButton.window === window && colorButton.superview === self
+    }
+
+    #if DEBUG
+    private func logHoverDiagnostic(_ message: String) {
+        guard hoverDiagnosticCount < 80 else { return }
+        hoverDiagnosticCount += 1
+        let diagnostic =
+            "TodoSticky DEBUG: hover \(message) " +
+                "window=\(window?.windowNumber ?? -1) " +
+                "header=\(debugIdentity(self)) button=\(debugIdentity(colorButton)) " +
+                "buttonLive=\(isLiveColorButton) pointerInside=\(isPointerInside) " +
+                "menuOpen=\(isColorMenuOpen) keyboardFocused=\(isKeyboardFocused) " +
+                "voiceOver=\(isVoiceOverEnabled) buttonVisible=\(isColorButtonVisible) " +
+                "buttonAlpha=\(colorButton.alphaValue)"
+        FileHandle.standardError.write(Data("\(diagnostic)\n".utf8))
+    }
+
+    private func debugIdentity(_ object: AnyObject) -> String {
+        String(describing: Unmanaged.passUnretained(object).toOpaque())
+    }
+    #endif
 
     private func removeAccessibilityOptionsObserver() {
         guard let accessibilityOptionsObserver else { return }
@@ -184,14 +273,23 @@ final class StickyHeaderView: NSView, NSMenuDelegate {
         }
     }
 
-    private func updateColorButtonVisibility() {
-        let shouldBeVisible = shouldRevealColorControl
+    private func updateColorButtonVisibility(reason: String) {
+        let shouldBeVisible = isPointerInside
             || isColorMenuOpen
             || isKeyboardFocused
             || isVoiceOverEnabled
-        guard isColorButtonVisible != shouldBeVisible else { return }
+        let visibilityBefore = isColorButtonVisible
         isColorButtonVisible = shouldBeVisible
-        colorButton.contentTintColor = NSColor.black.withAlphaComponent(shouldBeVisible ? 0.48 : 0)
+        colorButton.alphaValue = shouldBeVisible ? 1 : Self.hiddenColorButtonAlpha
+        colorButton.needsDisplay = true
+        if visibilityBefore != shouldBeVisible {
+            #if DEBUG
+            logHoverDiagnostic(
+                "visibility updated reason=\(reason) visible=\(visibilityBefore)->\(shouldBeVisible) " +
+                    "liveButton=\(isLiveColorButton)"
+            )
+            #endif
+        }
     }
 
     private func makeColorSwatch(for color: StickyColor) -> NSImage {
@@ -282,22 +380,26 @@ final class StickyHeaderView: NSView, NSMenuDelegate {
     func menuWillOpen(_ menu: NSMenu) {
         guard menu === colorButton.menu else { return }
         isColorMenuOpen = true
-        onMenuVisibilityChanged?(true)
-        updateColorButtonVisibility()
+        #if DEBUG
+        logHoverDiagnostic("menuWillOpen")
+        #endif
+        updateColorButtonVisibility(reason: "menu-will-open")
     }
 
     func menuDidClose(_ menu: NSMenu) {
         guard menu === colorButton.menu else { return }
         isColorMenuOpen = false
+        #if DEBUG
+        logHoverDiagnostic("menuDidClose")
+        #endif
+        setPointerInside(pointerIsOverWindowContent(), reason: "menu-did-close-pointer-snapshot")
 
         // Wait until AppKit finishes menu tracking before updating menu item state.
         Task { @MainActor [weak self] in
             guard let self else { return }
-            self.onMenuVisibilityChanged?(false)
             if let selectedColor = self.selectedColor {
                 self.updateColorMenuSelection(for: selectedColor)
             }
-            self.updateColorButtonVisibility()
         }
     }
 
