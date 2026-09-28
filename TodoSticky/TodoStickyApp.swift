@@ -42,6 +42,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.delegate = self
         window.isOpaque = false
         window.backgroundColor = .clear
+        window.hasShadow = false
+
+        #if DEBUG
+        print("TodoSticky DEBUG: native window shadow = \(window.hasShadow)")
+        #endif
 
         let desktopIconLevel = Int(CGWindowLevelForKey(.desktopIconWindow))
         let selectedLevel = desktopIconLevel + 1

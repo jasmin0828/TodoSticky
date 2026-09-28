@@ -11,7 +11,7 @@ struct StickyView: View {
             ZStack {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(store.selectedColor.color)
-                    .shadow(color: .black.opacity(0.18), radius: 14, y: 6)
+                    .shadow(color: .black.opacity(0.12), radius: 8, y: 3)
                     .padding(8)
 
                 VStack(alignment: .leading, spacing: compact ? 6 : 9) {
