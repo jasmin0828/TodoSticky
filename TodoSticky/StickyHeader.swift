@@ -84,11 +84,28 @@ final class StickyHeaderView: NSView {
             )
             item.target = self
             item.representedObject = color.rawValue
+            item.image = makeColorSwatch(for: color)
             item.state = color == selectedColor ? .on : .off
             menu.addItem(item)
         }
 
         return menu
+    }
+
+    private func makeColorSwatch(for color: StickyColor) -> NSImage {
+        let size = NSSize(width: 12, height: 12)
+        let fillColor = NSColor(color.color)
+        return NSImage(size: size, flipped: false) { bounds in
+            let circle = NSRect(x: bounds.midX - 5, y: bounds.midY - 5, width: 10, height: 10)
+            let path = NSBezierPath(ovalIn: circle)
+            path.lineWidth = 0.75
+
+            fillColor.setFill()
+            path.fill()
+            NSColor.black.withAlphaComponent(0.16).setStroke()
+            path.stroke()
+            return true
+        }
     }
 
     @objc private func showColorMenu() {
