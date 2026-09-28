@@ -28,6 +28,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.title = "Todo Sticky"
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
+        window.isMovable = true
         window.isMovableByWindowBackground = true
         window.minSize = NSSize(width: 320, height: 400)
         window.isOpaque = false
@@ -38,7 +39,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopWindow)))
         window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
 
-        window.contentView = NSHostingView(rootView: StickyView())
+        let hostingView = NSHostingView(rootView: StickyView())
+        hostingView.autoresizingMask = [.width, .height]
+        window.contentView = hostingView
         window.setFrame(initialFrame(for: window), display: true)
 
         stickyWindow = window

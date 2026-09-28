@@ -108,6 +108,20 @@ struct StickyView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 18)
         }
+        .overlay(alignment: .topLeading) {
+            HStack(spacing: 0) {
+                Color.clear
+                    .frame(width: 88)
+                    .allowsHitTesting(false)
+
+                WindowDragRegion()
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 32)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: 32)
+            .accessibilityHidden(true)
+        }
         .padding(8)
         .frame(minWidth: 320, minHeight: 400)
         .preferredColorScheme(.light)
@@ -134,6 +148,8 @@ struct StickyView: View {
                     .font(.system(size: 14))
                     .foregroundStyle(.black.opacity(item.isCompleted ? 0.42 : 0.76))
                     .strikethrough(item.isCompleted, color: .black.opacity(0.35))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
 
                 Spacer(minLength: 0)
             }
@@ -155,5 +171,24 @@ struct StickyView: View {
         guard !title.isEmpty else { return }
         items.insert(TodoItem(title: title), at: 0)
         draft = ""
+    }
+}
+
+private struct WindowDragRegion: NSViewRepresentable {
+    func makeNSView(context: Context) -> WindowDragSurfaceView {
+        WindowDragSurfaceView()
+    }
+
+    func updateNSView(_ nsView: WindowDragSurfaceView, context: Context) {}
+}
+
+private final class WindowDragSurfaceView: NSView {
+    override func mouseDown(with event: NSEvent) {
+        guard let window, window.isMovable else { return }
+        window.performDrag(with: event)
+    }
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .openHand)
     }
 }
