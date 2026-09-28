@@ -18,6 +18,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private let framePreferences = WindowFramePreferences()
     private var frameSaveTask: Task<Void, Never>?
     private var stickyWindow: NSWindow?
+    private var isClosingStickyWindow = false
     private var todoStore: TodoStore?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -37,6 +38,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.isMovable = true
         window.isMovableByWindowBackground = true
         window.minSize = NSSize(width: 320, height: 180)
+        window.isReleasedWhenClosed = false
         window.delegate = self
         window.isOpaque = false
         window.backgroundColor = .clear
@@ -68,8 +70,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         true
     }
 
-    func applicationWillTerminate(_ notification: Notification) {
-        saveWindowFrame()
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        frameSaveTask?.cancel()
+        frameSaveTask = nil
+
+        // Save while the app and window are still alive. A last-window close
+        // has already saved its frame in windowWillClose(_:) and is no longer visible.
+        if !isClosingStickyWindow, let window = stickyWindow {
+            framePreferences.save(StickyWindowFrame(rect: window.frame))
+        }
+        return .terminateNow
     }
 
     func windowDidMove(_ notification: Notification) {
@@ -90,8 +100,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     func windowWillClose(_ notification: Notification) {
+        isClosingStickyWindow = true
         frameSaveTask?.cancel()
-        saveWindowFrame()
+        frameSaveTask = nil
+        guard let window = notification.object as? NSWindow else { return }
+        framePreferences.save(StickyWindowFrame(rect: window.frame))
     }
 
     private func restoredFrame(for window: NSWindow) -> NSRect {
