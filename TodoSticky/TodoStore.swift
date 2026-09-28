@@ -60,6 +60,17 @@ final class TodoStore {
     }
 
     @discardableResult
+    func updateTodoTitle(id: UUID, title: String) -> Bool {
+        let cleanedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanedTitle.isEmpty,
+              let index = state.todos.firstIndex(where: { $0.id == id }) else { return false }
+
+        state.todos[index].title = cleanedTitle
+        persist()
+        return true
+    }
+
+    @discardableResult
     func deleteTodo(id: UUID) -> Bool {
         guard let index = state.todos.firstIndex(where: { $0.id == id }) else { return false }
         state.todos.remove(at: index)

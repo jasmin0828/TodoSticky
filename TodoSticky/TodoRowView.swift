@@ -3,10 +3,17 @@ import SwiftUI
 struct TodoRowView: View {
     let item: TodoItem
     let compact: Bool
+    let isEditing: Bool
+    @Binding var editingDraft: String
+    let onBeginEditing: () -> Void
+    let onCommitEditing: (String) -> Void
+    let onCancelEditing: () -> Void
     let onToggle: () -> Void
     let onDelete: () -> Void
 
     @State private var isHovered = false
+    @State private var isCancellingEdit = false
+    @FocusState private var isEditorFocused: Bool
 
     var body: some View {
         HStack(spacing: 8) {
@@ -21,12 +28,38 @@ struct TodoRowView: View {
             .accessibilityLabel(item.title)
             .accessibilityValue(item.isCompleted ? "已完成" : "未完成")
 
-            Text(item.title)
-                .font(.system(size: 14))
-                .foregroundStyle(.black.opacity(item.isCompleted ? 0.42 : 0.76))
-                .strikethrough(item.isCompleted, color: .black.opacity(0.35))
-                .lineLimit(1)
-                .truncationMode(.tail)
+            if isEditing {
+                TextField("", text: $editingDraft)
+                    .font(.system(size: 14))
+                    .foregroundStyle(.black.opacity(item.isCompleted ? 0.42 : 0.76))
+                    .strikethrough(item.isCompleted, color: .black.opacity(0.35))
+                    .textFieldStyle(.plain)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .focused($isEditorFocused)
+                    .accessibilityLabel("编辑待办事项")
+                    .accessibilityHint("按 Return 保存，按 Escape 取消")
+                    .onSubmit(commitEditing)
+                    .onExitCommand(perform: cancelEditing)
+                    .onChange(of: isEditorFocused) { _, isFocused in
+                        guard !isFocused, isEditing, !isCancellingEdit else { return }
+                        commitEditing()
+                    }
+                    .task(id: isEditing) {
+                        guard isEditing else { return }
+                        isCancellingEdit = false
+                        isEditorFocused = true
+                    }
+            } else {
+                Text(item.title)
+                    .font(.system(size: 14))
+                    .foregroundStyle(.black.opacity(item.isCompleted ? 0.42 : 0.76))
+                    .strikethrough(item.isCompleted, color: .black.opacity(0.35))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .onTapGesture(count: 2, perform: onBeginEditing)
+                    .accessibilityAction(named: Text("编辑待办事项"), onBeginEditing)
+            }
 
             Spacer(minLength: 0)
 
@@ -50,5 +83,16 @@ struct TodoRowView: View {
                 isHovered = hovering
             }
         }
+    }
+
+    private func commitEditing() {
+        onCommitEditing(editingDraft)
+    }
+
+    private func cancelEditing() {
+        guard isEditing else { return }
+        isCancellingEdit = true
+        isEditorFocused = false
+        onCancelEditing()
     }
 }

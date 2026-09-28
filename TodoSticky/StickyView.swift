@@ -3,6 +3,8 @@ import SwiftUI
 struct StickyView: View {
     @Bindable var store: TodoStore
     @State private var draft = ""
+    @State private var editingTodoID: UUID? = nil
+    @State private var editingTodoDraft = ""
 
     var body: some View {
         GeometryReader { geometry in
@@ -71,9 +73,36 @@ struct StickyView: View {
         TodoRowView(
             item: item,
             compact: compact,
+            isEditing: editingTodoID == item.id,
+            editingDraft: $editingTodoDraft,
+            onBeginEditing: { beginEditing(item) },
+            onCommitEditing: { commitEditing(id: item.id, title: $0) },
+            onCancelEditing: { cancelEditing(id: item.id) },
             onToggle: { store.toggleTodo(id: item.id) },
             onDelete: { store.deleteTodo(id: item.id) }
         )
+    }
+
+    private func beginEditing(_ item: TodoItem) {
+        if let editingTodoID, editingTodoID != item.id {
+            store.updateTodoTitle(id: editingTodoID, title: editingTodoDraft)
+        }
+
+        editingTodoID = item.id
+        editingTodoDraft = item.title
+    }
+
+    private func commitEditing(id: UUID, title: String) {
+        guard editingTodoID == id else { return }
+        store.updateTodoTitle(id: id, title: title)
+        editingTodoID = nil
+        editingTodoDraft = ""
+    }
+
+    private func cancelEditing(id: UUID) {
+        guard editingTodoID == id else { return }
+        editingTodoID = nil
+        editingTodoDraft = ""
     }
 
     private func addTodo() {

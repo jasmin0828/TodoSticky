@@ -2,7 +2,7 @@ import Foundation
 
 struct TodoItem: Codable, Equatable, Identifiable, Sendable {
     let id: UUID
-    let title: String
+    var title: String
     var isCompleted: Bool
     let createdAt: Date
 

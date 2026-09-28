@@ -55,6 +55,64 @@ final class TodoStoreTests: XCTestCase {
         XCTAssertTrue(remaining.isEmpty)
     }
 
+    func testUpdateTitleTrimsWhitespaceAndPreservesTodoIdentityAndState() async throws {
+        let (file, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let createdAt = Date(timeIntervalSince1970: 1_700_000_100.25)
+
+        let result = await MainActor.run { () -> (Bool, UUID, TodoItem?) in
+            let store = TodoStore(file: file)
+            store.addTodo(title: "Before", createdAt: createdAt)
+            let id = store.todos[0].id
+            store.toggleTodo(id: id)
+            let updated = store.updateTodoTitle(id: id, title: "  After edit \n")
+            return (updated, id, store.todos.first)
+        }
+
+        XCTAssertTrue(result.0)
+        XCTAssertEqual(result.2?.title, "After edit")
+        XCTAssertEqual(result.2?.id, result.1)
+        XCTAssertTrue(result.2?.isCompleted == true)
+        XCTAssertEqual(result.2?.createdAt, createdAt)
+    }
+
+    func testEmptyTitleUpdateDoesNotOverwriteOrDeleteTodo() async throws {
+        let (file, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let result = await MainActor.run { () -> (Bool, [TodoItem]) in
+            let store = TodoStore(file: file)
+            store.addTodo(title: "Keep this title")
+            let id = store.todos[0].id
+            let updated = store.updateTodoTitle(id: id, title: " \n\t ")
+            return (updated, store.todos)
+        }
+
+        XCTAssertFalse(result.0)
+        XCTAssertEqual(result.1.count, 1)
+        XCTAssertEqual(result.1[0].title, "Keep this title")
+    }
+
+    func testUpdatedTitlePersistsWithTodoIdentityAndCompletionState() async throws {
+        let (file, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let createdAt = Date(timeIntervalSince1970: 1_700_000_200.5)
+
+        let restored = await MainActor.run { () -> (UUID, TodoItem?) in
+            let store = TodoStore(file: file)
+            store.addTodo(title: "Before", createdAt: createdAt)
+            let id = store.todos[0].id
+            store.toggleTodo(id: id)
+            store.updateTodoTitle(id: id, title: "After")
+            return (id, TodoStore(file: file).todos.first)
+        }
+
+        XCTAssertEqual(restored.1?.title, "After")
+        XCTAssertEqual(restored.1?.id, restored.0)
+        XCTAssertTrue(restored.1?.isCompleted == true)
+        XCTAssertEqual(restored.1?.createdAt, createdAt)
+    }
+
     func testStoreRoundTripPersistsTodosCompletionAndSelectedColor() async throws {
         let (file, directory) = try Self.makeTemporaryFile()
         defer { try? FileManager.default.removeItem(at: directory) }
