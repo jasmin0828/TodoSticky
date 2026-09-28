@@ -3,22 +3,37 @@ import SwiftUI
 
 struct StickyHeader: NSViewRepresentable {
     let selectedColor: StickyColor
+    let shouldRevealColorControl: Bool
     let onSelectColor: (StickyColor) -> Void
+    let onMenuVisibilityChanged: (Bool) -> Void
 
     func makeNSView(context: Context) -> StickyHeaderView {
         StickyHeaderView()
     }
 
     func updateNSView(_ nsView: StickyHeaderView, context: Context) {
-        nsView.update(selectedColor: selectedColor, onSelectColor: onSelectColor)
+        nsView.update(
+            selectedColor: selectedColor,
+            shouldRevealColorControl: shouldRevealColorControl,
+            onSelectColor: onSelectColor,
+            onMenuVisibilityChanged: onMenuVisibilityChanged
+        )
     }
 }
 
 @MainActor
-final class StickyHeaderView: NSView {
+final class StickyHeaderView: NSView, NSMenuDelegate {
     private let titleLabel = NSTextField(labelWithString: "待办")
-    private let colorButton = NSButton()
+    private let colorButton = StickyColorButton()
     private var onSelectColor: ((StickyColor) -> Void)?
+    private var onMenuVisibilityChanged: ((Bool) -> Void)?
+    private var selectedColor: StickyColor?
+    private var shouldRevealColorControl = false
+    private var isColorMenuOpen = false
+    private var isColorButtonVisible = false
+    private var isKeyboardFocused = false
+    private var isVoiceOverEnabled = NSWorkspace.shared.isVoiceOverEnabled
+    private var accessibilityOptionsObserver: NSObjectProtocol?
     #if DEBUG
     private static var didLogColorMenuDiagnostics = false
     #endif
@@ -33,9 +48,37 @@ final class StickyHeaderView: NSView {
         configureHeader()
     }
 
-    func update(selectedColor: StickyColor, onSelectColor: @escaping (StickyColor) -> Void) {
+    func update(
+        selectedColor: StickyColor,
+        shouldRevealColorControl: Bool,
+        onSelectColor: @escaping (StickyColor) -> Void,
+        onMenuVisibilityChanged: @escaping (Bool) -> Void
+    ) {
         self.onSelectColor = onSelectColor
-        colorButton.menu = makeColorMenu(selectedColor: selectedColor)
+        self.onMenuVisibilityChanged = onMenuVisibilityChanged
+        self.shouldRevealColorControl = shouldRevealColorControl
+
+        if colorButton.menu == nil {
+            self.selectedColor = selectedColor
+            colorButton.menu = makeColorMenu(selectedColor: selectedColor)
+        } else if self.selectedColor != selectedColor {
+            self.selectedColor = selectedColor
+            if !isColorMenuOpen {
+                updateColorMenuSelection(for: selectedColor)
+            }
+        }
+
+        updateColorButtonVisibility()
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        if window == nil {
+            removeAccessibilityOptionsObserver()
+        } else {
+            observeAccessibilityOptions()
+        }
+        updateColorButtonVisibility()
     }
 
     private func configureHeader() {
@@ -48,13 +91,18 @@ final class StickyHeaderView: NSView {
 
         colorButton.image = NSImage(systemSymbolName: "ellipsis", accessibilityDescription: "便签颜色")?
             .withSymbolConfiguration(.init(pointSize: 16, weight: .semibold))
-        colorButton.contentTintColor = NSColor.black.withAlphaComponent(0.48)
+        // Keep the native button accessible; hide only its template glyph while idle.
+        colorButton.contentTintColor = NSColor.black.withAlphaComponent(0)
         colorButton.isBordered = false
         colorButton.focusRingType = .none
         colorButton.target = self
         colorButton.action = #selector(showColorMenu)
         colorButton.setAccessibilityLabel("便签颜色")
         colorButton.toolTip = "便签颜色"
+        colorButton.onKeyboardFocusChanged = { [weak self] isFocused in
+            self?.isKeyboardFocused = isFocused
+            self?.updateColorButtonVisibility()
+        }
 
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         colorButton.translatesAutoresizingMaskIntoConstraints = false
@@ -70,6 +118,28 @@ final class StickyHeaderView: NSView {
             colorButton.widthAnchor.constraint(equalToConstant: 28),
             colorButton.heightAnchor.constraint(equalToConstant: 28)
         ])
+    }
+
+    private func observeAccessibilityOptions() {
+        guard accessibilityOptionsObserver == nil else { return }
+        let workspace = NSWorkspace.shared
+        accessibilityOptionsObserver = workspace.notificationCenter.addObserver(
+            forName: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification,
+            object: workspace,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.isVoiceOverEnabled = NSWorkspace.shared.isVoiceOverEnabled
+                self.updateColorButtonVisibility()
+            }
+        }
+    }
+
+    private func removeAccessibilityOptionsObserver() {
+        guard let accessibilityOptionsObserver else { return }
+        NSWorkspace.shared.notificationCenter.removeObserver(accessibilityOptionsObserver)
+        self.accessibilityOptionsObserver = nil
     }
 
     private func makeColorMenu(selectedColor: StickyColor) -> NSMenu {
@@ -94,6 +164,7 @@ final class StickyHeaderView: NSView {
             item.state = color == selectedColor ? .on : .off
             menu.addItem(item)
         }
+        menu.delegate = self
 
         #if DEBUG
         if !Self.didLogColorMenuDiagnostics {
@@ -103,6 +174,24 @@ final class StickyHeaderView: NSView {
         #endif
 
         return menu
+    }
+
+    private func updateColorMenuSelection(for selectedColor: StickyColor) {
+        for item in colorButton.menu?.items ?? [] {
+            guard let rawValue = item.representedObject as? String,
+                  let color = StickyColor(rawValue: rawValue) else { continue }
+            item.state = color == selectedColor ? .on : .off
+        }
+    }
+
+    private func updateColorButtonVisibility() {
+        let shouldBeVisible = shouldRevealColorControl
+            || isColorMenuOpen
+            || isKeyboardFocused
+            || isVoiceOverEnabled
+        guard isColorButtonVisible != shouldBeVisible else { return }
+        isColorButtonVisible = shouldBeVisible
+        colorButton.contentTintColor = NSColor.black.withAlphaComponent(shouldBeVisible ? 0.48 : 0)
     }
 
     private func makeColorSwatch(for color: StickyColor) -> NSImage {
@@ -190,10 +279,36 @@ final class StickyHeaderView: NSView {
         onSelectColor?(color)
     }
 
+    func menuWillOpen(_ menu: NSMenu) {
+        guard menu === colorButton.menu else { return }
+        isColorMenuOpen = true
+        onMenuVisibilityChanged?(true)
+        updateColorButtonVisibility()
+    }
+
+    func menuDidClose(_ menu: NSMenu) {
+        guard menu === colorButton.menu else { return }
+        isColorMenuOpen = false
+
+        // Wait until AppKit finishes menu tracking before updating menu item state.
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            self.onMenuVisibilityChanged?(false)
+            if let selectedColor = self.selectedColor {
+                self.updateColorMenuSelection(for: selectedColor)
+            }
+            self.updateColorButtonVisibility()
+        }
+    }
+
     override func hitTest(_ point: NSPoint) -> NSView? {
         guard bounds.contains(point) else { return nil }
 
         if let control = super.hitTest(point) as? NSControl, control.isEnabled {
+            if control === colorButton, !isColorButtonVisible {
+                return self
+            }
+
             if let textField = control as? NSTextField {
                 if textField.isEditable || textField.isSelectable {
                     return control
