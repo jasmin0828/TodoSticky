@@ -14,7 +14,7 @@ struct TodoStickyApp: App {
 }
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var stickyWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -31,6 +31,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.isMovable = true
         window.isMovableByWindowBackground = true
         window.minSize = NSSize(width: 320, height: 400)
+        window.delegate = self
         window.isOpaque = false
         window.backgroundColor = .clear
 
@@ -51,6 +52,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         true
+    }
+
+    func windowDidResize(_ notification: Notification) {
+        #if DEBUG
+        guard let window = notification.object as? NSWindow else { return }
+        print("TodoSticky DEBUG: window resized \(Int(window.frame.width))x\(Int(window.frame.height))")
+        #endif
     }
 
     private func initialFrame(for window: NSWindow) -> NSRect {

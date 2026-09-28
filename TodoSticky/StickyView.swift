@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct TodoItem: Identifiable, Equatable {
@@ -38,20 +39,12 @@ struct StickyView: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(stickyYellow)
                 .shadow(color: .black.opacity(0.18), radius: 14, y: 6)
+                .padding(8)
 
             VStack(alignment: .leading, spacing: 0) {
-                HStack(alignment: .center) {
-                    Text("今日待办")
-                        .font(.system(size: 22, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.black.opacity(0.78))
-
-                    Spacer()
-
-                    Image(systemName: "ellipsis")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.black.opacity(0.42))
-                        .accessibilityHidden(true)
-                }
+                StickyHeader()
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 42)
 
                 Spacer(minLength: 20)
 
@@ -104,25 +97,9 @@ struct StickyView: View {
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.black.opacity(0.48))
             }
-            .padding(.top, 42)
-            .padding(.horizontal, 20)
-            .padding(.bottom, 18)
+            .padding(.horizontal, 28)
+            .padding(.bottom, 26)
         }
-        .overlay(alignment: .topLeading) {
-            HStack(spacing: 0) {
-                Color.clear
-                    .frame(width: 88)
-                    .allowsHitTesting(false)
-
-                WindowDragRegion()
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 32)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: 32)
-            .accessibilityHidden(true)
-        }
-        .padding(8)
         .frame(minWidth: 320, minHeight: 400)
         .preferredColorScheme(.light)
     }
@@ -174,17 +151,83 @@ struct StickyView: View {
     }
 }
 
-private struct WindowDragRegion: NSViewRepresentable {
-    func makeNSView(context: Context) -> WindowDragSurfaceView {
-        WindowDragSurfaceView()
+private struct StickyHeader: NSViewRepresentable {
+    func makeNSView(context: Context) -> StickyHeaderView {
+        StickyHeaderView()
     }
 
-    func updateNSView(_ nsView: WindowDragSurfaceView, context: Context) {}
+    func updateNSView(_ nsView: StickyHeaderView, context: Context) {}
 }
 
-private final class WindowDragSurfaceView: NSView {
+private final class StickyHeaderView: NSView {
+    private let titleLabel = NSTextField(labelWithString: "今日待办")
+    private let ellipsisImageView = NSImageView()
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        configureHeader()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        configureHeader()
+    }
+
+    private func configureHeader() {
+        let systemFont = NSFont.systemFont(ofSize: 22, weight: .semibold)
+        let roundedDescriptor = systemFont.fontDescriptor.withDesign(.rounded) ?? systemFont.fontDescriptor
+        titleLabel.font = NSFont(descriptor: roundedDescriptor, size: 22) ?? systemFont
+        titleLabel.textColor = NSColor.black.withAlphaComponent(0.78)
+        titleLabel.lineBreakMode = .byTruncatingTail
+        titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        ellipsisImageView.image = NSImage(systemSymbolName: "ellipsis", accessibilityDescription: nil)?
+            .withSymbolConfiguration(.init(pointSize: 16, weight: .semibold))
+        ellipsisImageView.contentTintColor = NSColor.black.withAlphaComponent(0.42)
+        ellipsisImageView.imageScaling = .scaleProportionallyDown
+
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        ellipsisImageView.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(titleLabel)
+        addSubview(ellipsisImageView)
+
+        NSLayoutConstraint.activate([
+            titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor),
+            titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: ellipsisImageView.leadingAnchor, constant: -12),
+            ellipsisImageView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            ellipsisImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            ellipsisImageView.widthAnchor.constraint(equalToConstant: 22),
+            ellipsisImageView.heightAnchor.constraint(equalToConstant: 22)
+        ])
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        guard bounds.contains(point) else { return nil }
+
+        if let control = super.hitTest(point) as? NSControl, control.isEnabled {
+            if let textField = control as? NSTextField {
+                if textField.isEditable || textField.isSelectable {
+                    return control
+                }
+            } else {
+                return control
+            }
+        }
+
+        return self
+    }
+
     override func mouseDown(with event: NSEvent) {
+        #if DEBUG
+        print("TodoSticky DEBUG: drag mouseDown")
+        #endif
+
         guard let window, window.isMovable else { return }
+
+        #if DEBUG
+        print("TodoSticky DEBUG: performDrag")
+        #endif
         window.performDrag(with: event)
     }
 
