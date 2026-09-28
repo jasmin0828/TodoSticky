@@ -16,8 +16,6 @@ struct StickyHeader: NSViewRepresentable {
 
 @MainActor
 final class StickyHeaderView: NSView, NSMenuDelegate {
-    private static let hiddenColorButtonAlpha: CGFloat = 0.001
-
     private let titleLabel = NSTextField(labelWithString: "待办")
     private let colorButton = StickyColorButton()
     private var onSelectColor: ((StickyColor) -> Void)?
@@ -85,7 +83,9 @@ final class StickyHeaderView: NSView, NSMenuDelegate {
         colorButton.image = NSImage(systemSymbolName: "ellipsis", accessibilityDescription: "便签颜色")?
             .withSymbolConfiguration(.init(pointSize: 16, weight: .semibold))
         colorButton.contentTintColor = NSColor.black.withAlphaComponent(0.48)
-        colorButton.alphaValue = Self.hiddenColorButtonAlpha
+        colorButton.isHidden = true
+        colorButton.alphaValue = 1
+        colorButton.isEnabled = true
         colorButton.isBordered = false
         colorButton.focusRingType = .none
         colorButton.target = self
@@ -279,18 +279,67 @@ final class StickyHeaderView: NSView, NSMenuDelegate {
             || isKeyboardFocused
             || isVoiceOverEnabled
         let visibilityBefore = isColorButtonVisible
+        let hiddenBefore = colorButton.isHidden
         isColorButtonVisible = shouldBeVisible
-        colorButton.alphaValue = shouldBeVisible ? 1 : Self.hiddenColorButtonAlpha
-        colorButton.needsDisplay = true
+        if shouldBeVisible {
+            colorButton.isHidden = false
+            colorButton.alphaValue = 1
+            colorButton.isEnabled = true
+        } else {
+            colorButton.isHidden = true
+        }
+
+        if visibilityBefore != shouldBeVisible || hiddenBefore != !shouldBeVisible {
+            needsLayout = true
+            layoutSubtreeIfNeeded()
+            colorButton.needsDisplay = true
+            needsDisplay = true
+        }
+
+        #if DEBUG
+        if reason == "mouseEntered" || reason == "mouseExited" {
+            logColorButtonGeometry(event: reason, hiddenBefore: hiddenBefore)
+        }
+        #endif
+
         if visibilityBefore != shouldBeVisible {
             #if DEBUG
             logHoverDiagnostic(
                 "visibility updated reason=\(reason) visible=\(visibilityBefore)->\(shouldBeVisible) " +
-                    "liveButton=\(isLiveColorButton)"
+                    "hidden=\(hiddenBefore)->\(colorButton.isHidden) liveButton=\(isLiveColorButton)"
             )
             #endif
         }
     }
+
+    #if DEBUG
+    private func logColorButtonGeometry(event: String, hiddenBefore: Bool) {
+        let buttonFrame = colorButton.convert(colorButton.bounds, to: self)
+        let visibleHeaderBounds = visibleRect.intersection(bounds)
+        let visibleIntersection = buttonFrame.intersection(visibleHeaderBounds)
+        let buttonWindowNumber = colorButton.window?.windowNumber ?? -1
+        let headerWindowNumber = window?.windowNumber ?? -1
+        let tintDescription = colorButton.contentTintColor.map { String(describing: $0) } ?? "nil"
+        let superviewDescription = colorButton.superview.map {
+            "\(type(of: $0))@\(debugIdentity($0))"
+        } ?? "nil"
+
+        let diagnostic =
+            "TodoSticky DEBUG: hover geometry event=\(event) " +
+                "header=\(debugIdentity(self)) button=\(debugIdentity(colorButton)) " +
+                "hidden=\(hiddenBefore)->\(colorButton.isHidden) alpha=\(colorButton.alphaValue) " +
+                "enabled=\(colorButton.isEnabled) frame=\(NSStringFromRect(buttonFrame)) " +
+                "bounds=\(NSStringFromRect(colorButton.bounds)) " +
+                "headerBounds=\(NSStringFromRect(bounds)) " +
+                "visibleHeaderBounds=\(NSStringFromRect(visibleHeaderBounds)) " +
+                "buttonVisibleIntersection=\(NSStringFromRect(visibleIntersection)) " +
+                "superview=\(superviewDescription) " +
+                "buttonWindow=\(buttonWindowNumber) headerWindow=\(headerWindowNumber) " +
+                "sameWindow=\(buttonWindowNumber >= 0 && buttonWindowNumber == headerWindowNumber) " +
+                "tint=\(tintDescription)"
+        FileHandle.standardError.write(Data("\(diagnostic)\n".utf8))
+    }
+    #endif
 
     private func makeColorSwatch(for color: StickyColor) -> NSImage {
         let size = NSSize(width: 12, height: 12)
@@ -407,7 +456,7 @@ final class StickyHeaderView: NSView, NSMenuDelegate {
         guard bounds.contains(point) else { return nil }
 
         if let control = super.hitTest(point) as? NSControl, control.isEnabled {
-            if control === colorButton, !isColorButtonVisible {
+            if control === colorButton, colorButton.isHidden {
                 return self
             }
 
