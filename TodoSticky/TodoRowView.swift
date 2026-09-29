@@ -5,7 +5,7 @@ struct TodoRowView: View {
     let compact: Bool
     let isEditing: Bool
     @Binding var editingDraft: String
-    let onBeginEditing: () -> Void
+    let onBeginEditing: (String) -> Void
     let onCommitEditing: (String) -> Void
     let onCancelEditing: () -> Void
     let onToggle: () -> Void
@@ -42,12 +42,27 @@ struct TodoRowView: View {
                     .onSubmit(commitEditing)
                     .onExitCommand(perform: cancelEditing)
                     .onChange(of: isEditorFocused) { _, isFocused in
+                        #if DEBUG
+                        logEditDiagnostic(
+                            "focus state todoID=\(item.id) focused=\(isFocused) draft=\(String(reflecting: editingDraft))"
+                        )
+                        #endif
                         guard !isFocused, isEditing, !isCancellingEdit else { return }
                         commitEditing()
+                    }
+                    .onAppear {
+                        #if DEBUG
+                        logEditDiagnostic(
+                            "TextField appeared todoID=\(item.id) draft=\(String(reflecting: editingDraft))"
+                        )
+                        #endif
                     }
                     .task(id: isEditing) {
                         guard isEditing else { return }
                         isCancellingEdit = false
+                        #if DEBUG
+                        logEditDiagnostic("focus request todoID=\(item.id)")
+                        #endif
                         isEditorFocused = true
                     }
             } else {
@@ -57,8 +72,18 @@ struct TodoRowView: View {
                     .strikethrough(item.isCompleted, color: .black.opacity(0.35))
                     .lineLimit(1)
                     .truncationMode(.tail)
-                    .onTapGesture(count: 2, perform: onBeginEditing)
-                    .accessibilityAction(named: Text("编辑待办事项"), onBeginEditing)
+                    .overlay {
+                        TodoTitleDoubleClickSurface(todoID: item.id) { clickedID in
+                            guard clickedID == item.id else { return }
+                            onBeginEditing("native-double-click")
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .contentShape(.rect)
+                        .accessibilityHidden(true)
+                    }
+                    .accessibilityAction(named: Text("编辑待办事项")) {
+                        onBeginEditing("accessibility")
+                    }
             }
 
             Spacer(minLength: 0)
@@ -83,6 +108,15 @@ struct TodoRowView: View {
                 isHovered = hovering
             }
         }
+        #if DEBUG
+        .onChange(of: isEditing) { wasEditing, isEditing in
+            let previousView = wasEditing ? "TextField" : "Text"
+            let currentView = isEditing ? "TextField" : "Text"
+            logEditDiagnostic(
+                "row render transition todoID=\(item.id) view=\(previousView)->\(currentView) draft=\(String(reflecting: editingDraft))"
+            )
+        }
+        #endif
     }
 
     private func commitEditing() {
@@ -95,4 +129,10 @@ struct TodoRowView: View {
         isEditorFocused = false
         onCancelEditing()
     }
+
+    #if DEBUG
+    private func logEditDiagnostic(_ message: String) {
+        FileHandle.standardError.write(Data("TodoSticky DEBUG: edit \(message)\n".utf8))
+    }
+    #endif
 }

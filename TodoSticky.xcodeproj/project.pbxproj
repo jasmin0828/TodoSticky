@@ -20,6 +20,7 @@
 		A20000000000000000000009 /* TodoRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000038 /* TodoRowView.swift */; };
 		A2000000000000000000000A /* StickyHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000039 /* StickyHeader.swift */; };
 		A2000000000000000000000B /* StickyColorButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000042 /* StickyColorButton.swift */; };
+		A2000000000000000000000C /* TodoTitleDoubleClickSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000043 /* TodoTitleDoubleClickSurface.swift */; };
 		A20000000000000000000020 /* TodoStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000040 /* TodoStoreTests.swift */; };
 		A20000000000000000000021 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A20000000000000000000041 /* XCTest.framework */; };
 /* End PBXBuildFile section */
@@ -39,6 +40,7 @@
 		A20000000000000000000038 /* TodoRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoRowView.swift; sourceTree = "<group>"; };
 		A20000000000000000000039 /* StickyHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickyHeader.swift; sourceTree = "<group>"; };
 		A20000000000000000000042 /* StickyColorButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickyColorButton.swift; sourceTree = "<group>"; };
+		A20000000000000000000043 /* TodoTitleDoubleClickSurface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoTitleDoubleClickSurface.swift; sourceTree = "<group>"; };
 		A20000000000000000000040 /* TodoStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoStoreTests.swift; sourceTree = "<group>"; };
 		A20000000000000000000041 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = System/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
 		A20000000000000000000051 /* TodoStickyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TodoStickyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -88,6 +90,7 @@
 				A20000000000000000000038 /* TodoRowView.swift */,
 				A20000000000000000000039 /* StickyHeader.swift */,
 				A20000000000000000000042 /* StickyColorButton.swift */,
+				A20000000000000000000043 /* TodoTitleDoubleClickSurface.swift */,
 			);
 			path = TodoSticky;
 			sourceTree = "<group>";
@@ -225,6 +228,7 @@
 				A20000000000000000000009 /* TodoRowView.swift in Sources */,
 				A2000000000000000000000A /* StickyHeader.swift in Sources */,
 				A2000000000000000000000B /* StickyColorButton.swift in Sources */,
+				A2000000000000000000000C /* TodoTitleDoubleClickSurface.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

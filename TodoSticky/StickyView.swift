@@ -75,7 +75,7 @@ struct StickyView: View {
             compact: compact,
             isEditing: editingTodoID == item.id,
             editingDraft: $editingTodoDraft,
-            onBeginEditing: { beginEditing(item) },
+            onBeginEditing: { source in beginEditing(item, source: source) },
             onCommitEditing: { commitEditing(id: item.id, title: $0) },
             onCancelEditing: { cancelEditing(id: item.id) },
             onToggle: { store.toggleTodo(id: item.id) },
@@ -83,13 +83,35 @@ struct StickyView: View {
         )
     }
 
-    private func beginEditing(_ item: TodoItem) {
+    #if DEBUG
+    private func logEditDiagnostic(_ message: String) {
+        FileHandle.standardError.write(Data("TodoSticky DEBUG: edit \(message)\n".utf8))
+    }
+    #endif
+
+    private func beginEditing(_ item: TodoItem, source: String) {
+        #if DEBUG
+        logEditDiagnostic(
+            "entry callback source=\(source) todoID=\(item.id) " +
+                "editingTodoID before=\(editingTodoID?.uuidString ?? "none") " +
+                "draft before=\(String(reflecting: editingTodoDraft))"
+        )
+        #endif
+
         if let editingTodoID, editingTodoID != item.id {
             store.updateTodoTitle(id: editingTodoID, title: editingTodoDraft)
         }
 
-        editingTodoID = item.id
         editingTodoDraft = item.title
+        editingTodoID = item.id
+
+        #if DEBUG
+        logEditDiagnostic(
+            "entry state after todoID=\(item.id) " +
+                "editingTodoID=\(editingTodoID?.uuidString ?? "none") " +
+                "draft=\(String(reflecting: editingTodoDraft))"
+        )
+        #endif
     }
 
     private func commitEditing(id: UUID, title: String) {
