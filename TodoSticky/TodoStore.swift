@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import WidgetKit
 
 @MainActor
 @Observable
@@ -132,6 +133,7 @@ final class TodoStore {
             state = updatedState
             persistenceErrorMessage = nil
             isPersistenceErrorPresented = false
+            WidgetCenter.shared.reloadTimelines(ofKind: "TodoStickyWidget")
             return true
         } catch {
             showPersistenceError("无法保存本地数据；请检查磁盘空间和文件权限。")
