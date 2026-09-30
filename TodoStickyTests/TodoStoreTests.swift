@@ -201,13 +201,148 @@ final class TodoStoreTests: XCTestCase {
         XCTAssertLessThanOrEqual(restored.rect.maxY, fallback.maxY)
     }
 
+    func testSharedMigrationCopiesValidLegacyStateWithoutChangingBytes() throws {
+        let directory = try Self.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let legacyFile = TodoStateFile(fileURL: directory.appending(path: "legacy/todo-state.json"))
+        let sharedFile = TodoStateFile(fileURL: directory.appending(path: "shared/todo-state.json"))
+        let expected = StickyAppState(
+            todos: [TodoItem(
+                title: "Migrate me",
+                isCompleted: true,
+                createdAt: Date(timeIntervalSince1970: 1_700_000_000.123456)
+            )],
+            selectedColor: .purple
+        )
+
+        try legacyFile.save(expected)
+        let legacyBytes = try Data(contentsOf: legacyFile.fileURL)
+
+        XCTAssertTrue(try sharedFile.migrateIfNeeded(from: legacyFile))
+        XCTAssertEqual(try Data(contentsOf: sharedFile.fileURL), legacyBytes)
+        XCTAssertEqual(try sharedFile.load(), expected)
+    }
+
+    func testSharedMigrationNeverOverwritesExistingSharedState() throws {
+        let directory = try Self.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let legacyFile = TodoStateFile(fileURL: directory.appending(path: "legacy/todo-state.json"))
+        let sharedFile = TodoStateFile(fileURL: directory.appending(path: "shared/todo-state.json"))
+        let legacyState = StickyAppState(todos: [TodoItem(
+            title: "Legacy",
+            createdAt: Date(timeIntervalSince1970: 1_700_000_001.25)
+        )])
+        let sharedState = StickyAppState(
+            todos: [TodoItem(
+                title: "Canonical",
+                createdAt: Date(timeIntervalSince1970: 1_700_000_002.5)
+            )],
+            selectedColor: .blue
+        )
+
+        try legacyFile.save(legacyState)
+        try sharedFile.save(sharedState)
+
+        XCTAssertFalse(try sharedFile.migrateIfNeeded(from: legacyFile))
+        XCTAssertEqual(try sharedFile.load(), sharedState)
+    }
+
+    func testCorruptLegacyDataIsPreservedAndNotMigrated() throws {
+        let directory = try Self.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let legacyFile = TodoStateFile(fileURL: directory.appending(path: "legacy/todo-state.json"))
+        let sharedFile = TodoStateFile(fileURL: directory.appending(path: "shared/todo-state.json"))
+        let corruptData = Data("not valid state".utf8)
+        try FileManager.default.createDirectory(
+            at: legacyFile.fileURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try corruptData.write(to: legacyFile.fileURL, options: .atomic)
+
+        XCTAssertThrowsError(try sharedFile.migrateIfNeeded(from: legacyFile))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: sharedFile.fileURL.path))
+        XCTAssertEqual(try Data(contentsOf: legacyFile.fileURL), corruptData)
+    }
+
+    func testStoreMutationReadsLatestStateBeforeWriting() async throws {
+        let (file, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let result = await MainActor.run { () -> ([String], [String]) in
+            let firstStore = TodoStore(file: file)
+            let secondStore = TodoStore(file: file)
+
+            XCTAssertTrue(firstStore.addTodo(title: "First"))
+            XCTAssertTrue(secondStore.addTodo(title: "Second"))
+
+            return (
+                TodoStore(file: file).todos.map(\.title),
+                secondStore.todos.map(\.title)
+            )
+        }
+
+        XCTAssertEqual(Set(result.0), Set(["First", "Second"]))
+        XCTAssertEqual(Set(result.1), Set(["First", "Second"]))
+    }
+
+    func testConcurrentMutationsSerializeReadModifyWrite() throws {
+        let (file, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let errorBox = MutationErrorBox()
+        let mutationCount = 24
+
+        DispatchQueue.concurrentPerform(iterations: mutationCount) { index in
+            do {
+                guard try file.mutate({ state in
+                    state.todos.append(TodoItem(
+                        title: "Concurrent \(index)",
+                        createdAt: Date(timeIntervalSince1970: Double(index))
+                    ))
+                    return true
+                }) != nil else {
+                    errorBox.append(TestMutationError.noMutation)
+                    return
+                }
+            } catch {
+                errorBox.append(error)
+            }
+        }
+
+        XCTAssertTrue(errorBox.errors.isEmpty, "Unexpected mutation errors: \(errorBox.errors)")
+        XCTAssertEqual(try file.load().todos.count, mutationCount)
+    }
+
     private static func makeTemporaryFile() throws -> (TodoStateFile, URL) {
+        let directory = try makeTemporaryDirectory()
+        return (TodoStateFile(fileURL: directory.appending(path: "state.json")), directory)
+    }
+
+    private static func makeTemporaryDirectory() throws -> URL {
         let directory = FileManager.default.temporaryDirectory
             .appending(path: "TodoStickyTests.\(UUID().uuidString)", directoryHint: .isDirectory)
         try FileManager.default.createDirectory(
             at: directory,
             withIntermediateDirectories: true
         )
-        return (TodoStateFile(fileURL: directory.appending(path: "state.json")), directory)
+        return directory
     }
+}
+
+private final class MutationErrorBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private(set) var errors: [Error] = []
+
+    func append(_ error: Error) {
+        lock.lock()
+        errors.append(error)
+        lock.unlock()
+    }
+}
+
+private enum TestMutationError: Error {
+    case noMutation
 }

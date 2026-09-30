@@ -28,6 +28,7 @@
 
 /* Begin PBXFileReference section */
 		A30000000000000000000002 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A30000000000000000000003 /* TodoSticky.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TodoSticky.entitlements; sourceTree = "<group>"; };
 		A10000000000000000000020 /* TodoSticky.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TodoSticky.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000021 /* TodoStickyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoStickyApp.swift; sourceTree = "<group>"; };
 		A10000000000000000000022 /* StickyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickyView.swift; sourceTree = "<group>"; };
@@ -80,6 +81,7 @@
 			isa = PBXGroup;
 			children = (
 				A30000000000000000000002 /* Assets.xcassets */,
+				A30000000000000000000003 /* TodoSticky.entitlements */,
 				A10000000000000000000021 /* TodoStickyApp.swift */,
 				A10000000000000000000022 /* StickyView.swift */,
 				A20000000000000000000030 /* TodoItem.swift */,
@@ -259,6 +261,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = TodoSticky/TodoSticky.entitlements;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
 				CURRENT_PROJECT_VERSION = 1;
@@ -290,6 +293,7 @@
 				CODE_SIGNING_TIMESTAMP = YES;
 				CODE_SIGN_STYLE = Manual;
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
+				CODE_SIGN_ENTITLEMENTS = TodoSticky/TodoSticky.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = P5949MJ486;

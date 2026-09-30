@@ -35,9 +35,12 @@ final class TodoStore {
 
     static func applicationStore() -> TodoStore {
         do {
-            return TodoStore(file: try TodoStateFile.applicationSupport())
+            let sharedFile = try TodoStateFile.applicationGroup()
+            let legacyFile = try TodoStateFile.applicationSupport()
+            try sharedFile.migrateIfNeeded(from: legacyFile)
+            return TodoStore(file: sharedFile)
         } catch {
-            return TodoStore(storageUnavailableMessage: "本地存储不可用；更改无法持久保存。")
+            return TodoStore(storageUnavailableMessage: "共享本地数据无法迁移或访问；为避免覆盖原文件，本次更改不会保存。")
         }
     }
 
@@ -46,42 +49,65 @@ final class TodoStore {
         let cleanedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleanedTitle.isEmpty else { return false }
 
-        state.todos.append(TodoItem(title: cleanedTitle, createdAt: createdAt))
-        persist()
-        return true
+        return commit { state in
+            state.todos.append(TodoItem(title: cleanedTitle, createdAt: createdAt))
+            return true
+        }
     }
 
     @discardableResult
     func toggleTodo(id: UUID) -> Bool {
-        guard let index = state.todos.firstIndex(where: { $0.id == id }) else { return false }
-        state.todos[index].isCompleted.toggle()
-        persist()
-        return true
+        commit { state in
+            guard let index = state.todos.firstIndex(where: { $0.id == id }) else { return false }
+            state.todos[index].isCompleted.toggle()
+            return true
+        }
     }
 
     @discardableResult
     func updateTodoTitle(id: UUID, title: String) -> Bool {
         let cleanedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !cleanedTitle.isEmpty,
-              let index = state.todos.firstIndex(where: { $0.id == id }) else { return false }
+        guard !cleanedTitle.isEmpty else { return false }
 
-        state.todos[index].title = cleanedTitle
-        persist()
-        return true
+        return commit { state in
+            guard let index = state.todos.firstIndex(where: { $0.id == id }) else { return false }
+            state.todos[index].title = cleanedTitle
+            return true
+        }
     }
 
     @discardableResult
     func deleteTodo(id: UUID) -> Bool {
-        guard let index = state.todos.firstIndex(where: { $0.id == id }) else { return false }
-        state.todos.remove(at: index)
-        persist()
-        return true
+        commit { state in
+            guard let index = state.todos.firstIndex(where: { $0.id == id }) else { return false }
+            state.todos.remove(at: index)
+            return true
+        }
     }
 
     func selectColor(_ color: StickyColor) {
-        guard state.selectedColor != color else { return }
-        state.selectedColor = color
-        persist()
+        _ = commit { state in
+            guard state.selectedColor != color else { return false }
+            state.selectedColor = color
+            return true
+        }
+    }
+
+    @discardableResult
+    func reloadFromDisk() -> Bool {
+        guard let stateFile else { return false }
+
+        do {
+            state = try stateFile.load()
+            canWriteState = true
+            persistenceErrorMessage = nil
+            isPersistenceErrorPresented = false
+            return true
+        } catch {
+            canWriteState = false
+            showPersistenceError("本地数据无法读取；为避免覆盖原文件，本次更改不会保存。")
+            return false
+        }
     }
 
     private func orderedTodos(completed: Bool) -> [TodoItem] {
@@ -96,14 +122,20 @@ final class TodoStore {
             .map(\.element)
     }
 
-    private func persist() {
-        guard canWriteState, let stateFile else { return }
+    private func commit(_ mutation: (inout StickyAppState) -> Bool) -> Bool {
+        guard canWriteState, let stateFile else { return false }
 
         do {
-            try stateFile.save(state)
+            guard let updatedState = try stateFile.mutate(mutation) else {
+                return false
+            }
+            state = updatedState
             persistenceErrorMessage = nil
+            isPersistenceErrorPresented = false
+            return true
         } catch {
             showPersistenceError("无法保存本地数据；请检查磁盘空间和文件权限。")
+            return false
         }
     }
 
