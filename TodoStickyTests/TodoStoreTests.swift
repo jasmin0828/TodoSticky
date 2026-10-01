@@ -268,6 +268,155 @@ final class TodoStoreTests: XCTestCase {
         XCTAssertEqual(try canonicalFile.load(), originalState)
     }
 
+    func testTodoReferencePreservesUUIDWithoutDependingOnTitle() {
+        let id = UUID()
+        let firstTodo = TodoItem(id: id, title: "First title")
+        let renamedTodo = TodoItem(id: id, title: "Renamed title")
+        let firstReference = TodoReference(id: firstTodo.id)
+        let renamedReference = TodoReference(id: renamedTodo.id)
+
+        XCTAssertEqual(firstReference.id, id)
+        XCTAssertEqual(firstReference, renamedReference)
+        XCTAssertEqual(firstReference.displayRepresentation, renamedReference.displayRepresentation)
+    }
+
+    func testTodoReferenceQueryDoesNotSuggestTodos() async throws {
+        let suggestions = try await TodoReferenceQuery().suggestedEntities()
+        XCTAssertTrue(suggestions.isEmpty)
+    }
+
+    func testCompletionIntentExecutesCanonicalTransition() throws {
+        let (file, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let todo = TodoItem(title: "Intent completion")
+        try file.save(StickyAppState(todos: [todo]))
+        let intent = SetTodoCompletionIntent(
+            todo: TodoReference(id: todo.id),
+            targetState: true,
+            expectedRevision: 0
+        )
+
+        XCTAssertEqual(try intent.execute(using: file), .changed)
+        XCTAssertTrue(try file.load().todos[0].isCompleted)
+        XCTAssertEqual(try file.load().todos[0].completionRevision, 1)
+    }
+
+    func testCompletionIntentDuplicateIsIdempotent() throws {
+        let (file, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let todo = TodoItem(title: "Intent duplicate")
+        try file.save(StickyAppState(todos: [todo]))
+        let intent = SetTodoCompletionIntent(
+            todo: TodoReference(id: todo.id),
+            targetState: true,
+            expectedRevision: 0
+        )
+
+        XCTAssertEqual(try intent.execute(using: file), .changed)
+        let bytesAfterFirstRequest = try Data(contentsOf: file.fileURL)
+        XCTAssertEqual(try intent.execute(using: file), .alreadyAtTarget)
+        XCTAssertEqual(try Data(contentsOf: file.fileURL), bytesAfterFirstRequest)
+        XCTAssertEqual(try file.load().todos[0].completionRevision, 1)
+    }
+
+    func testCompletionIntentRejectsStaleConflict() throws {
+        let (file, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let todo = TodoItem(title: "Intent conflict")
+        try file.save(StickyAppState(todos: [todo]))
+        _ = try file.setCompletion(id: todo.id, targetState: true, expectedRevision: 0)
+        let canonicalBytes = try Data(contentsOf: file.fileURL)
+        let staleIntent = SetTodoCompletionIntent(
+            todo: TodoReference(id: todo.id),
+            targetState: false,
+            expectedRevision: 0
+        )
+
+        XCTAssertThrowsError(try staleIntent.execute(using: file)) { error in
+            XCTAssertEqual(error as? TodoCompletionIntentError, .staleConflict)
+        }
+        XCTAssertEqual(try Data(contentsOf: file.fileURL), canonicalBytes)
+        XCTAssertTrue(try file.load().todos[0].isCompleted)
+        XCTAssertEqual(try file.load().todos[0].completionRevision, 1)
+    }
+
+    func testCompletionIntentRejectsMissingTodoWithoutCreatingOne() throws {
+        let (file, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try file.save(StickyAppState(todos: [TodoItem(title: "Existing")]))
+        let canonicalBytes = try Data(contentsOf: file.fileURL)
+        let intent = SetTodoCompletionIntent(
+            todo: TodoReference(id: UUID()),
+            targetState: true,
+            expectedRevision: 0
+        )
+
+        XCTAssertThrowsError(try intent.execute(using: file)) { error in
+            XCTAssertEqual(error as? TodoCompletionIntentError, .notFound)
+        }
+        XCTAssertEqual(try Data(contentsOf: file.fileURL), canonicalBytes)
+        XCTAssertEqual(try file.load().todos.count, 1)
+    }
+
+    func testCompletionIntentRejectsNegativeExpectedRevision() throws {
+        let (file, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let todo = TodoItem(title: "Invalid intent revision")
+        try file.save(StickyAppState(todos: [todo]))
+        let canonicalBytes = try Data(contentsOf: file.fileURL)
+        let intent = SetTodoCompletionIntent(
+            todo: TodoReference(id: todo.id),
+            targetState: true,
+            expectedRevision: -1
+        )
+
+        XCTAssertThrowsError(try intent.execute(using: file)) { error in
+            XCTAssertEqual(error as? TodoCompletionIntentError, .invalidExpectedRevision)
+        }
+        XCTAssertEqual(try Data(contentsOf: file.fileURL), canonicalBytes)
+        XCTAssertFalse(try file.load().todos[0].isCompleted)
+    }
+
+    func testCompletionIntentPreservesCorruptCanonicalState() throws {
+        let (file, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let corruptBytes = Data("not valid state".utf8)
+        try corruptBytes.write(to: file.fileURL)
+        let intent = SetTodoCompletionIntent(
+            todo: TodoReference(id: UUID()),
+            targetState: true,
+            expectedRevision: 0
+        )
+
+        XCTAssertThrowsError(try intent.execute(using: file)) { error in
+            XCTAssertEqual(error as? TodoCompletionIntentError, .storageUnavailable)
+        }
+        XCTAssertEqual(try Data(contentsOf: file.fileURL), corruptBytes)
+    }
+
+    func testCompletionIntentReportsPersistenceFailureWithoutChangingCanonicalState() throws {
+        let (canonicalFile, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let todo = TodoItem(title: "Intent write failure")
+        try canonicalFile.save(StickyAppState(todos: [todo]))
+        let canonicalBytes = try Data(contentsOf: canonicalFile.fileURL)
+        let failingFile = TodoStateFile(fileURL: canonicalFile.fileURL) { _, _ in
+            throw TestPersistenceError.writeFailed
+        }
+        let intent = SetTodoCompletionIntent(
+            todo: TodoReference(id: todo.id),
+            targetState: true,
+            expectedRevision: 0
+        )
+
+        XCTAssertThrowsError(try intent.execute(using: failingFile)) { error in
+            XCTAssertEqual(error as? TodoCompletionIntentError, .storageUnavailable)
+        }
+        XCTAssertEqual(try Data(contentsOf: canonicalFile.fileURL), canonicalBytes)
+        XCTAssertFalse(try canonicalFile.load().todos[0].isCompleted)
+        XCTAssertEqual(try canonicalFile.load().todos[0].completionRevision, 0)
+    }
+
     func testDeleteRemovesTodo() async throws {
         let (file, directory) = try Self.makeTemporaryFile()
         defer { try? FileManager.default.removeItem(at: directory) }
