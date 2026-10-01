@@ -98,9 +98,13 @@ struct TodoStickyWidgetView: View {
             } else {
                 ForEach(visibleTodos) { todo in
                     HStack(spacing: 6) {
-                        Image(systemName: "circle")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
+                        Button(intent: WidgetCompletionIntentFactory.completionIntent(for: todo)) {
+                            Image(systemName: "circle")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Complete Todo")
                         Text(todo.title)
                             .font(.caption)
                             .lineLimit(1)

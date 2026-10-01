@@ -285,6 +285,23 @@ final class TodoStoreTests: XCTestCase {
         XCTAssertTrue(suggestions.isEmpty)
     }
 
+    func testWidgetCompletionIntentUsesRenderedIdentityTargetAndRevision() {
+        var firstTodo = TodoItem(id: UUID(), title: "First")
+        firstTodo.completionRevision = 3
+        var secondTodo = TodoItem(id: UUID(), title: "Second")
+        secondTodo.completionRevision = 8
+
+        let firstIntent = WidgetCompletionIntentFactory.completionIntent(for: firstTodo)
+        let secondIntent = WidgetCompletionIntentFactory.completionIntent(for: secondTodo)
+
+        XCTAssertEqual(firstIntent.todo.id, firstTodo.id)
+        XCTAssertTrue(firstIntent.targetState)
+        XCTAssertEqual(firstIntent.expectedRevision, 3)
+        XCTAssertEqual(secondIntent.todo.id, secondTodo.id)
+        XCTAssertTrue(secondIntent.targetState)
+        XCTAssertEqual(secondIntent.expectedRevision, 8)
+    }
+
     func testCompletionIntentExecutesCanonicalTransition() throws {
         let (file, directory) = try Self.makeTemporaryFile()
         defer { try? FileManager.default.removeItem(at: directory) }

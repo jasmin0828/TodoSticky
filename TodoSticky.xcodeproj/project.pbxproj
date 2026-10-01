@@ -14,6 +14,7 @@
 		A20000000000000000000003 /* StickyAppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000032 /* StickyAppState.swift */; };
 		A20000000000000000000004 /* TodoStateFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000033 /* TodoStateFile.swift */; };
 		C10000000000000000000001 /* TodoCompletionIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000003 /* TodoCompletionIntent.swift */; };
+		C20000000000000000000001 /* WidgetCompletionIntentFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000003 /* WidgetCompletionIntentFactory.swift */; };
 		A20000000000000000000005 /* TodoStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000034 /* TodoStore.swift */; };
 		A20000000000000000000006 /* StickyWindowFrame.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000035 /* StickyWindowFrame.swift */; };
 		A20000000000000000000007 /* WindowFramePreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000036 /* WindowFramePreferences.swift */; };
@@ -31,6 +32,7 @@
 		B10000000000000000000004 /* StickyAppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000032 /* StickyAppState.swift */; };
 		B10000000000000000000005 /* TodoStateFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000033 /* TodoStateFile.swift */; };
 		C10000000000000000000002 /* TodoCompletionIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000003 /* TodoCompletionIntent.swift */; };
+		C20000000000000000000002 /* WidgetCompletionIntentFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000003 /* WidgetCompletionIntentFactory.swift */; };
 		B10000000000000000000006 /* TodoStickyWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B10000000000000000000010 /* TodoStickyWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
@@ -74,6 +76,7 @@
 		A20000000000000000000032 /* StickyAppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickyAppState.swift; sourceTree = "<group>"; };
 		A20000000000000000000033 /* TodoStateFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoStateFile.swift; sourceTree = "<group>"; };
 		C10000000000000000000003 /* TodoCompletionIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoCompletionIntent.swift; sourceTree = "<group>"; };
+		C20000000000000000000003 /* WidgetCompletionIntentFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetCompletionIntentFactory.swift; sourceTree = "<group>"; };
 		A20000000000000000000034 /* TodoStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoStore.swift; sourceTree = "<group>"; };
 		A20000000000000000000035 /* StickyWindowFrame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickyWindowFrame.swift; sourceTree = "<group>"; };
 		A20000000000000000000036 /* WindowFramePreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowFramePreferences.swift; sourceTree = "<group>"; };
@@ -151,6 +154,7 @@
 				A20000000000000000000032 /* StickyAppState.swift */,
 				A20000000000000000000033 /* TodoStateFile.swift */,
 				C10000000000000000000003 /* TodoCompletionIntent.swift */,
+				C20000000000000000000003 /* WidgetCompletionIntentFactory.swift */,
 				A20000000000000000000034 /* TodoStore.swift */,
 				A20000000000000000000035 /* StickyWindowFrame.swift */,
 				A20000000000000000000036 /* WindowFramePreferences.swift */,
@@ -320,6 +324,7 @@
 				A20000000000000000000003 /* StickyAppState.swift in Sources */,
 				A20000000000000000000004 /* TodoStateFile.swift in Sources */,
 				C10000000000000000000001 /* TodoCompletionIntent.swift in Sources */,
+				C20000000000000000000001 /* WidgetCompletionIntentFactory.swift in Sources */,
 				A20000000000000000000005 /* TodoStore.swift in Sources */,
 				A20000000000000000000006 /* StickyWindowFrame.swift in Sources */,
 				A20000000000000000000007 /* WindowFramePreferences.swift in Sources */,
@@ -349,6 +354,7 @@
 				B10000000000000000000004 /* StickyAppState.swift in Sources */,
 				B10000000000000000000005 /* TodoStateFile.swift in Sources */,
 				C10000000000000000000002 /* TodoCompletionIntent.swift in Sources */,
+				C20000000000000000000002 /* WidgetCompletionIntentFactory.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
