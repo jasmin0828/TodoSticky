@@ -21,14 +21,20 @@
 		A20000000000000000000008 /* TodoInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000037 /* TodoInputView.swift */; };
 		A20000000000000000000009 /* TodoRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000038 /* TodoRowView.swift */; };
 		A2000000000000000000000A /* StickyHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000039 /* StickyHeader.swift */; };
-		A2000000000000000000000B /* StickyColorButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000042 /* StickyColorButton.swift */; };
 		A2000000000000000000000C /* TodoTitleDoubleClickSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000043 /* TodoTitleDoubleClickSurface.swift */; };
 		A2000000000000000000000D /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000044 /* AppLanguage.swift */; };
 		A2000000000000000000000E /* LanguagePreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000045 /* LanguagePreferences.swift */; };
 		A2000000000000000000000F /* AppLocale.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000047 /* AppLocale.swift */; };
+		A20000000000000000000010 /* AppLanguageController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000049 /* AppLanguageController.swift */; };
+		A20000000000000000000011 /* SettingsRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000004A /* SettingsRootView.swift */; };
+		A20000000000000000000012 /* AppBuildInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000004B /* AppBuildInfo.swift */; };
+		A20000000000000000000013 /* SettingsColorControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000004D /* SettingsColorControl.swift */; };
 		A20000000000000000000020 /* TodoStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000040 /* TodoStoreTests.swift */; };
 		A20000000000000000000022 /* LanguagePreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000046 /* LanguagePreferencesTests.swift */; };
 		A20000000000000000000023 /* AppLocaleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000048 /* AppLocaleTests.swift */; };
+		A20000000000000000000024 /* AppLanguageControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000004C /* AppLanguageControllerTests.swift */; };
+		A20000000000000000000025 /* AppKitHeaderLocalizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000004E /* AppKitHeaderLocalizationTests.swift */; };
+		A20000000000000000000026 /* SettingsColorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000004F /* SettingsColorTests.swift */; };
 		A20000000000000000000021 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A20000000000000000000041 /* XCTest.framework */; };
 		A30000000000000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000002 /* Assets.xcassets */; };
 		A30000000000000000000005 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000004 /* Localizable.xcstrings */; };
@@ -95,13 +101,19 @@
 		A20000000000000000000039 /* StickyHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickyHeader.swift; sourceTree = "<group>"; };
 		A20000000000000000000040 /* TodoStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoStoreTests.swift; sourceTree = "<group>"; };
 		A20000000000000000000041 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = System/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
-		A20000000000000000000042 /* StickyColorButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickyColorButton.swift; sourceTree = "<group>"; };
 		A20000000000000000000043 /* TodoTitleDoubleClickSurface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoTitleDoubleClickSurface.swift; sourceTree = "<group>"; };
 		A20000000000000000000044 /* AppLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguage.swift; sourceTree = "<group>"; };
 		A20000000000000000000045 /* LanguagePreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguagePreferences.swift; sourceTree = "<group>"; };
 		A20000000000000000000046 /* LanguagePreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguagePreferencesTests.swift; sourceTree = "<group>"; };
 		A20000000000000000000047 /* AppLocale.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLocale.swift; sourceTree = "<group>"; };
 		A20000000000000000000048 /* AppLocaleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLocaleTests.swift; sourceTree = "<group>"; };
+		A20000000000000000000049 /* AppLanguageController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguageController.swift; sourceTree = "<group>"; };
+		A2000000000000000000004A /* SettingsRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsRootView.swift; sourceTree = "<group>"; };
+		A2000000000000000000004B /* AppBuildInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBuildInfo.swift; sourceTree = "<group>"; };
+		A2000000000000000000004C /* AppLanguageControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguageControllerTests.swift; sourceTree = "<group>"; };
+		A2000000000000000000004D /* SettingsColorControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsColorControl.swift; sourceTree = "<group>"; };
+		A2000000000000000000004E /* AppKitHeaderLocalizationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppKitHeaderLocalizationTests.swift; sourceTree = "<group>"; };
+		A2000000000000000000004F /* SettingsColorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsColorTests.swift; sourceTree = "<group>"; };
 		A20000000000000000000051 /* TodoStickyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TodoStickyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A30000000000000000000002 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A30000000000000000000003 /* TodoSticky.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TodoSticky.entitlements; sourceTree = "<group>"; };
@@ -177,12 +189,15 @@
 				A20000000000000000000037 /* TodoInputView.swift */,
 				A20000000000000000000038 /* TodoRowView.swift */,
 				A20000000000000000000039 /* StickyHeader.swift */,
-				A20000000000000000000042 /* StickyColorButton.swift */,
 				A20000000000000000000043 /* TodoTitleDoubleClickSurface.swift */,
 				A20000000000000000000044 /* AppLanguage.swift */,
 				A20000000000000000000045 /* LanguagePreferences.swift */,
 				A20000000000000000000047 /* AppLocale.swift */,
 				A30000000000000000000004 /* Localizable.xcstrings */,
+				A20000000000000000000049 /* AppLanguageController.swift */,
+				A2000000000000000000004A /* SettingsRootView.swift */,
+				A2000000000000000000004B /* AppBuildInfo.swift */,
+				A2000000000000000000004D /* SettingsColorControl.swift */,
 			);
 			path = TodoSticky;
 			sourceTree = "<group>";
@@ -202,6 +217,9 @@
 				A20000000000000000000040 /* TodoStoreTests.swift */,
 				A20000000000000000000046 /* LanguagePreferencesTests.swift */,
 				A20000000000000000000048 /* AppLocaleTests.swift */,
+				A2000000000000000000004C /* AppLanguageControllerTests.swift */,
+				A2000000000000000000004E /* AppKitHeaderLocalizationTests.swift */,
+				A2000000000000000000004F /* SettingsColorTests.swift */,
 			);
 			path = TodoStickyTests;
 			sourceTree = "<group>";
@@ -356,11 +374,14 @@
 				A20000000000000000000008 /* TodoInputView.swift in Sources */,
 				A20000000000000000000009 /* TodoRowView.swift in Sources */,
 				A2000000000000000000000A /* StickyHeader.swift in Sources */,
-				A2000000000000000000000B /* StickyColorButton.swift in Sources */,
 				A2000000000000000000000C /* TodoTitleDoubleClickSurface.swift in Sources */,
 				A2000000000000000000000D /* AppLanguage.swift in Sources */,
 				A2000000000000000000000E /* LanguagePreferences.swift in Sources */,
 				A2000000000000000000000F /* AppLocale.swift in Sources */,
+				A20000000000000000000010 /* AppLanguageController.swift in Sources */,
+				A20000000000000000000011 /* SettingsRootView.swift in Sources */,
+				A20000000000000000000012 /* AppBuildInfo.swift in Sources */,
+				A20000000000000000000013 /* SettingsColorControl.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -371,6 +392,9 @@
 				A20000000000000000000020 /* TodoStoreTests.swift in Sources */,
 				A20000000000000000000022 /* LanguagePreferencesTests.swift in Sources */,
 				A20000000000000000000023 /* AppLocaleTests.swift in Sources */,
+				A20000000000000000000024 /* AppLanguageControllerTests.swift in Sources */,
+				A20000000000000000000025 /* AppKitHeaderLocalizationTests.swift in Sources */,
+				A20000000000000000000026 /* SettingsColorTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -12,6 +12,7 @@ struct TodoRowPresentationID: Hashable {
 
 struct StickyView: View {
     @Bindable var store: TodoStore
+    @Environment(AppLanguageController.self) private var languageController
     @State private var draft = ""
     @State private var editingTodoID: UUID? = nil
     @State private var editingTodoDraft = ""
@@ -29,8 +30,7 @@ struct StickyView: View {
 
                 VStack(alignment: .leading, spacing: compact ? 6 : 9) {
                     StickyHeader(
-                        selectedColor: store.selectedColor,
-                        onSelectColor: { store.selectColor($0) }
+                        localeIdentifier: languageController.locale.identifier
                     )
                     .frame(maxWidth: .infinity)
                     .frame(height: 36)
@@ -75,8 +75,9 @@ struct StickyView: View {
         .alert("alert.saveFailed.title", isPresented: $store.isPersistenceErrorPresented) {
             Button("alert.ok", role: .cancel) {}
         } message: {
-            Text(store.persistenceErrorMessage ?? String(localized: "error.storage.unavailable"))
+            Text(LocalizedStringKey(store.persistenceErrorMessage ?? "error.storage.unavailable"))
         }
+        .environment(\.locale, languageController.locale)
     }
 
     private func todoRow(_ item: TodoItem, compact: Bool) -> some View {

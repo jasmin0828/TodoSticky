@@ -24,7 +24,7 @@ final class TodoStore {
             state = try file.load()
         } catch {
             canWriteState = false
-            showPersistenceError(String(localized: "error.todo.readFailure"))
+            showPersistenceError("error.todo.readFailure")
         }
     }
 
@@ -41,7 +41,7 @@ final class TodoStore {
             try sharedFile.migrateIfNeeded(from: legacyFile)
             return TodoStore(file: sharedFile)
         } catch {
-            return TodoStore(storageUnavailableMessage: String(localized: "error.todo.sharedMigrationFailure"))
+            return TodoStore(storageUnavailableMessage: "error.todo.sharedMigrationFailure")
         }
     }
 
@@ -84,7 +84,7 @@ final class TodoStore {
                 return false
             }
         } catch {
-            showPersistenceError(String(localized: "error.todo.saveFailure"))
+            showPersistenceError("error.todo.saveFailure")
             return false
         }
     }
@@ -130,7 +130,7 @@ final class TodoStore {
             return true
         } catch {
             canWriteState = false
-            showPersistenceError(String(localized: "error.todo.readFailure"))
+            showPersistenceError("error.todo.readFailure")
             return false
         }
     }
@@ -159,7 +159,7 @@ final class TodoStore {
             WidgetCenter.shared.reloadTimelines(ofKind: "TodoStickyWidget")
             return true
         } catch {
-            showPersistenceError(String(localized: "error.todo.saveFailure"))
+            showPersistenceError("error.todo.saveFailure")
             return false
         }
     }

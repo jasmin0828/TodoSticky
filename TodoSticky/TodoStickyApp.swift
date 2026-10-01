@@ -44,23 +44,25 @@ struct TodoStickyApp: App {
 
     var body: some Scene {
         Settings {
-            EmptyView()
+            SettingsRootView(todoStore: appDelegate.todoStore)
+                .environment(appDelegate.languageController)
+                .environment(\.locale, appDelegate.languageController.locale)
         }
     }
 }
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
+    let languageController = AppLanguageController()
     private let framePreferences = WindowFramePreferences()
     private var frameSaveTask: Task<Void, Never>?
     private var stickyWindow: NSWindow?
     private var isClosingStickyWindow = false
-    private var todoStore: TodoStore?
+    lazy var todoStore = TodoStore.applicationStore()
     private var stateInvalidationObserver: TodoStateInvalidationObserver?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        let store = TodoStore.applicationStore()
-        todoStore = store
+        let store = todoStore
         stateInvalidationObserver = TodoStateInvalidationObserver { [weak store] in
             Task { @MainActor in
                 store?.reloadFromDisk()
@@ -109,7 +111,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         // Keep the native green zoom control out of full-screen Spaces.
         window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenNone]
 
-        let hostingView = NSHostingView(rootView: StickyView(store: store))
+        let hostingView = NSHostingView(
+            rootView: StickyView(store: store)
+                .environment(languageController)
+                .environment(\.locale, languageController.locale)
+        )
         hostingView.autoresizingMask = [.width, .height]
         window.contentView = hostingView
         window.setFrame(restoredFrame(for: window), display: true)
@@ -120,7 +126,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     func applicationDidBecomeActive(_ notification: Notification) {
-        todoStore?.reloadFromDisk()
+        todoStore.reloadFromDisk()
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {

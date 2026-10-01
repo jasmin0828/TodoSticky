@@ -11,13 +11,17 @@ enum StickyColor: String, CaseIterable, Codable, Identifiable, Sendable {
     var id: Self { self }
 
     var title: String {
+        title(locale: .current)
+    }
+
+    func title(locale: Locale) -> String {
         switch self {
-        case .yellow: String(localized: "color.yellow")
-        case .blue: String(localized: "color.blue")
-        case .green: String(localized: "color.green")
-        case .pink: String(localized: "color.pink")
-        case .purple: String(localized: "color.purple")
-        case .gray: String(localized: "color.gray")
+        case .yellow: AppLocaleResolver.localizedString(forKey: "color.yellow", locale: locale)
+        case .blue: AppLocaleResolver.localizedString(forKey: "color.blue", locale: locale)
+        case .green: AppLocaleResolver.localizedString(forKey: "color.green", locale: locale)
+        case .pink: AppLocaleResolver.localizedString(forKey: "color.pink", locale: locale)
+        case .purple: AppLocaleResolver.localizedString(forKey: "color.purple", locale: locale)
+        case .gray: AppLocaleResolver.localizedString(forKey: "color.gray", locale: locale)
         }
     }
 

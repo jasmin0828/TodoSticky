@@ -4,6 +4,35 @@ enum AppLocaleResolver {
     static let english = Locale(identifier: "en")
     static let simplifiedChinese = Locale(identifier: "zh-Hans")
 
+    static func localizedString(
+        forKey key: String,
+        locale: Locale,
+        value: String? = nil,
+        table: String = "Localizable"
+    ) -> String {
+        let bundles = [
+            Bundle(for: AppLocaleBundleMarker.self),
+            Bundle.main
+        ]
+
+        for bundle in bundles {
+            guard let resourceURL = bundle.url(
+                forResource: locale.identifier,
+                withExtension: "lproj"
+            ), let localizedBundle = Bundle(url: resourceURL) else {
+                continue
+            }
+
+            return localizedBundle.localizedString(
+                forKey: key,
+                value: value,
+                table: table
+            )
+        }
+
+        return value ?? key
+    }
+
     static func locale(for language: AppLanguage, systemLocale: Locale = .current) -> Locale {
         switch language {
         case .system:
@@ -30,3 +59,5 @@ enum AppLocaleResolver {
         return simplifiedChinese
     }
 }
+
+private final class AppLocaleBundleMarker {}
