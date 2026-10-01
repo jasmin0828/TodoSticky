@@ -565,6 +565,93 @@ final class TodoStoreTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: file.fileURL), original)
     }
 
+    func testActivationReloadPicksUpExternalCompletionWithoutWriting() async throws {
+        let (file, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        try await MainActor.run {
+            let todo = TodoItem(title: "External completion")
+            try file.save(StickyAppState(todos: [todo]))
+            let store = TodoStore(file: file)
+
+            XCTAssertFalse(store.todos[0].isCompleted)
+            XCTAssertEqual(store.todos[0].completionRevision, 0)
+
+            XCTAssertEqual(
+                try file.setCompletion(id: todo.id, targetState: true, expectedRevision: 0).disposition,
+                .changed
+            )
+            let canonicalBytes = try Data(contentsOf: file.fileURL)
+            XCTAssertFalse(store.todos[0].isCompleted)
+            XCTAssertEqual(store.todos[0].completionRevision, 0)
+
+            XCTAssertTrue(store.reloadFromDisk())
+            XCTAssertTrue(store.todos[0].isCompleted)
+            XCTAssertEqual(store.todos[0].completionRevision, 1)
+            XCTAssertEqual(try Data(contentsOf: file.fileURL), canonicalBytes)
+
+            XCTAssertTrue(store.reloadFromDisk())
+            XCTAssertEqual(store.todos.count, 1)
+            XCTAssertEqual(store.todos[0].id, todo.id)
+            XCTAssertEqual(store.todos[0].completionRevision, 1)
+            XCTAssertEqual(try Data(contentsOf: file.fileURL), canonicalBytes)
+        }
+    }
+
+    func testActivationReloadPicksUpExternalTitleAndDeletionWithoutWriting() async throws {
+        let (file, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        try await MainActor.run {
+            let todo = TodoItem(title: "Before")
+            try file.save(StickyAppState(todos: [todo]))
+            let store = TodoStore(file: file)
+
+            XCTAssertNotNil(try file.mutate { state in
+                state.todos[0].title = "After"
+                return true
+            })
+            let renamedBytes = try Data(contentsOf: file.fileURL)
+            XCTAssertEqual(store.todos[0].title, "Before")
+
+            XCTAssertTrue(store.reloadFromDisk())
+            XCTAssertEqual(store.todos[0].title, "After")
+            XCTAssertEqual(store.todos[0].id, todo.id)
+            XCTAssertEqual(store.todos[0].completionRevision, 0)
+            XCTAssertEqual(try Data(contentsOf: file.fileURL), renamedBytes)
+
+            XCTAssertNotNil(try file.mutate { state in
+                state.todos.removeAll { $0.id == todo.id }
+                return true
+            })
+            let deletedBytes = try Data(contentsOf: file.fileURL)
+            XCTAssertEqual(store.todos.count, 1)
+
+            XCTAssertTrue(store.reloadFromDisk())
+            XCTAssertTrue(store.todos.isEmpty)
+            XCTAssertEqual(try Data(contentsOf: file.fileURL), deletedBytes)
+        }
+    }
+
+    func testActivationReloadPreservesValidMemoryAndCorruptCanonicalBytes() async throws {
+        let (file, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        try await MainActor.run {
+            let todo = TodoItem(title: "Keep in memory")
+            try file.save(StickyAppState(todos: [todo]))
+            let store = TodoStore(file: file)
+            let validMemory = store.todos
+            let corruptBytes = Data("not valid state".utf8)
+            try corruptBytes.write(to: file.fileURL)
+
+            XCTAssertFalse(store.reloadFromDisk())
+            XCTAssertEqual(store.todos, validMemory)
+            XCTAssertTrue(store.isPersistenceErrorPresented)
+            XCTAssertEqual(try Data(contentsOf: file.fileURL), corruptBytes)
+        }
+    }
+
     func testWindowFramePreferencesRoundTrip() throws {
         let suiteName = "TodoStickyTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
