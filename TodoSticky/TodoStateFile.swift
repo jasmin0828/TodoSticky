@@ -11,15 +11,15 @@ enum TodoStateFileError: LocalizedError, Equatable, Sendable {
     var errorDescription: String? {
         switch self {
         case .sharedContainerUnavailable:
-            "The shared container is unavailable."
+            String(localized: "error.storage.sharedUnavailable")
         case let .unableToOpenLock(_, error):
-            "Unable to open storage lock (errno \(error))."
+            "\(String(localized: "error.storage.lockOpen")) (errno \(error))."
         case let .unableToAcquireLock(_, error):
-            "Unable to acquire storage lock (errno \(error))."
+            "\(String(localized: "error.storage.lockAcquire")) (errno \(error))."
         case .invalidExpectedCompletionRevision:
-            "The expected completion revision is invalid."
+            String(localized: "error.completion.invalidRevision")
         case .completionRevisionOverflow:
-            "The completion revision cannot be incremented."
+            String(localized: "error.completion.overflow")
         }
     }
 }

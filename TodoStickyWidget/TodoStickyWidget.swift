@@ -22,8 +22,8 @@ struct TodoStickyWidgetEntry: TimelineEntry {
     static let placeholder = TodoStickyWidgetEntry(
         date: .now,
         state: StickyAppState(todos: [
-            TodoItem(title: "Plan the day"),
-            TodoItem(title: "Review TodoSticky")
+            TodoItem(title: String(localized: "widget.placeholder.planTheDay")),
+            TodoItem(title: String(localized: "widget.placeholder.reviewTodoSticky"))
         ]),
         storageError: false
     )
@@ -76,7 +76,7 @@ struct TodoStickyWidgetView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
-                Text("TodoSticky")
+                Text("widget.title")
                     .font(.headline)
                     .lineLimit(1)
 
@@ -88,11 +88,11 @@ struct TodoStickyWidgetView: View {
             }
 
             if entry.storageError {
-                Text("共享数据暂时不可用")
+                Text("widget.storageUnavailable")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else if visibleTodos.isEmpty {
-                Text("没有未完成 Todo")
+                Text("widget.noOpenTodos")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else {
@@ -104,7 +104,7 @@ struct TodoStickyWidgetView: View {
                                 .foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
-                        .accessibilityLabel("Complete Todo")
+                        .accessibilityLabel("widget.completeTodo")
                         Text(todo.title)
                             .font(.caption)
                             .lineLimit(1)
@@ -128,8 +128,8 @@ struct TodoStickyWidget: Widget {
         StaticConfiguration(kind: Self.kind, provider: TodoStickyWidgetProvider()) { entry in
             TodoStickyWidgetView(entry: entry)
         }
-        .configurationDisplayName("TodoSticky")
-        .description("在桌面查看未完成 Todo。")
+        .configurationDisplayName("widget.configurationDisplayName")
+        .description("widget.configurationDescription")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }

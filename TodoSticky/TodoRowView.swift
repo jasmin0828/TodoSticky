@@ -26,7 +26,7 @@ struct TodoRowView: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel(item.title)
-            .accessibilityValue(item.isCompleted ? "已完成" : "未完成")
+            .accessibilityValue(item.isCompleted ? Text("todo.status.completed") : Text("todo.status.open"))
 
             if isEditing {
                 TextField("", text: $editingDraft)
@@ -37,8 +37,8 @@ struct TodoRowView: View {
                     .lineLimit(1)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .focused($isEditorFocused)
-                    .accessibilityLabel("编辑待办事项")
-                    .accessibilityHint("按 Return 保存，按 Escape 取消")
+                    .accessibilityLabel(Text("todo.edit.accessibility"))
+                    .accessibilityHint(Text("todo.edit.hint"))
                     .onSubmit(commitEditing)
                     .onExitCommand(perform: cancelEditing)
                     .onChange(of: isEditorFocused) { _, isFocused in
@@ -81,7 +81,7 @@ struct TodoRowView: View {
                         .contentShape(.rect)
                         .accessibilityHidden(true)
                     }
-                    .accessibilityAction(named: Text("编辑待办事项")) {
+                    .accessibilityAction(named: Text("todo.edit.accessibility")) {
                         onBeginEditing("accessibility")
                     }
             }
@@ -97,7 +97,8 @@ struct TodoRowView: View {
                         .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("删除待办事项：\(item.title)")
+                .accessibilityLabel(Text("todo.delete.accessibility"))
+                .accessibilityValue(Text(item.title))
                 .transition(.opacity)
             }
         }

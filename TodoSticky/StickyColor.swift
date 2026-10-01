@@ -12,12 +12,12 @@ enum StickyColor: String, CaseIterable, Codable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .yellow: "Yellow"
-        case .blue: "Blue"
-        case .green: "Green"
-        case .pink: "Pink"
-        case .purple: "Purple"
-        case .gray: "Gray"
+        case .yellow: String(localized: "color.yellow")
+        case .blue: String(localized: "color.blue")
+        case .green: String(localized: "color.green")
+        case .pink: String(localized: "color.pink")
+        case .purple: String(localized: "color.purple")
+        case .gray: String(localized: "color.gray")
         }
     }
 

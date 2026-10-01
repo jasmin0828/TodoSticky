@@ -18,12 +18,12 @@ enum TodoStateInvalidation {
 }
 
 struct TodoReference: AppEntity, Equatable {
-    static var typeDisplayRepresentation: TypeDisplayRepresentation { "Todo" }
+    static var typeDisplayRepresentation: TypeDisplayRepresentation { "intent.todo" }
     static var defaultQuery: TodoReferenceQuery { TodoReferenceQuery() }
 
     let id: UUID
 
-    var displayRepresentation: DisplayRepresentation { "Todo" }
+    var displayRepresentation: DisplayRepresentation { "intent.todo" }
 
     init(id: UUID) {
         self.id = id
@@ -59,24 +59,24 @@ enum TodoCompletionIntentError: LocalizedError, Equatable, Sendable {
     var errorDescription: String? {
         switch self {
         case .invalidExpectedRevision:
-            "The expected completion revision is invalid."
+            String(localized: "error.completion.invalidRevision")
         case .staleConflict:
-            "This Todo changed before the action could complete."
+            String(localized: "error.completion.staleConflict")
         case .notFound:
-            "This Todo is no longer available."
+            String(localized: "error.completion.notFound")
         case .storageUnavailable:
-            "Todo state is unavailable."
+            String(localized: "error.completion.storageUnavailable")
         }
     }
 }
 
 struct SetTodoCompletionIntent: AppIntent {
-    static var title: LocalizedStringResource { "Set Todo Completion" }
+    static var title: LocalizedStringResource { "intent.setTodoCompletion.title" }
     static var isDiscoverable: Bool { false }
 
-    @Parameter(title: "Todo") var todo: TodoReference
-    @Parameter(title: "Completed") var targetState: Bool
-    @Parameter(title: "Expected Revision") var expectedRevision: Int
+    @Parameter(title: "intent.todo") var todo: TodoReference
+    @Parameter(title: "intent.completed") var targetState: Bool
+    @Parameter(title: "intent.expectedRevision") var expectedRevision: Int
 
     init() {}
 

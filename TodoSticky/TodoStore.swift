@@ -24,7 +24,7 @@ final class TodoStore {
             state = try file.load()
         } catch {
             canWriteState = false
-            showPersistenceError("本地数据无法读取；为避免覆盖原文件，本次更改不会保存。")
+            showPersistenceError(String(localized: "error.todo.readFailure"))
         }
     }
 
@@ -41,7 +41,7 @@ final class TodoStore {
             try sharedFile.migrateIfNeeded(from: legacyFile)
             return TodoStore(file: sharedFile)
         } catch {
-            return TodoStore(storageUnavailableMessage: "共享本地数据无法迁移或访问；为避免覆盖原文件，本次更改不会保存。")
+            return TodoStore(storageUnavailableMessage: String(localized: "error.todo.sharedMigrationFailure"))
         }
     }
 
@@ -84,7 +84,7 @@ final class TodoStore {
                 return false
             }
         } catch {
-            showPersistenceError("无法保存本地数据；请检查磁盘空间和文件权限。")
+            showPersistenceError(String(localized: "error.todo.saveFailure"))
             return false
         }
     }
@@ -130,7 +130,7 @@ final class TodoStore {
             return true
         } catch {
             canWriteState = false
-            showPersistenceError("本地数据无法读取；为避免覆盖原文件，本次更改不会保存。")
+            showPersistenceError(String(localized: "error.todo.readFailure"))
             return false
         }
     }
@@ -159,7 +159,7 @@ final class TodoStore {
             WidgetCenter.shared.reloadTimelines(ofKind: "TodoStickyWidget")
             return true
         } catch {
-            showPersistenceError("无法保存本地数据；请检查磁盘空间和文件权限。")
+            showPersistenceError(String(localized: "error.todo.saveFailure"))
             return false
         }
     }

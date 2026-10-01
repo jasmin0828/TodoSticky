@@ -16,7 +16,7 @@ struct StickyHeader: NSViewRepresentable {
 
 @MainActor
 final class StickyHeaderView: NSView, NSMenuDelegate {
-    private let titleLabel = NSTextField(labelWithString: "待办")
+    private let titleLabel = NSTextField(labelWithString: String(localized: "todo.header.title"))
     private let colorButton = StickyColorButton()
     private var onSelectColor: ((StickyColor) -> Void)?
     private var selectedColor: StickyColor?
@@ -80,7 +80,10 @@ final class StickyHeaderView: NSView, NSMenuDelegate {
         titleLabel.lineBreakMode = .byTruncatingTail
         titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        colorButton.image = NSImage(systemSymbolName: "ellipsis", accessibilityDescription: "便签颜色")?
+        colorButton.image = NSImage(
+            systemSymbolName: "ellipsis",
+            accessibilityDescription: String(localized: "color.menu.accessibility")
+        )?
             .withSymbolConfiguration(.init(pointSize: 16, weight: .semibold))
         colorButton.contentTintColor = NSColor.black.withAlphaComponent(0.48)
         colorButton.isHidden = true
@@ -90,8 +93,8 @@ final class StickyHeaderView: NSView, NSMenuDelegate {
         colorButton.focusRingType = .none
         colorButton.target = self
         colorButton.action = #selector(showColorMenu)
-        colorButton.setAccessibilityLabel("便签颜色")
-        colorButton.toolTip = "便签颜色"
+        colorButton.setAccessibilityLabel(String(localized: "color.menu.accessibility"))
+        colorButton.toolTip = String(localized: "color.menu.accessibility")
         colorButton.onKeyboardFocusChanged = { [weak self] isFocused in
             self?.isKeyboardFocused = isFocused
             self?.updateHeaderControlVisibility(reason: "keyboard-focus-\(isFocused)")
@@ -253,8 +256,8 @@ final class StickyHeaderView: NSView, NSMenuDelegate {
     }
 
     private func makeColorMenu(selectedColor: StickyColor) -> NSMenu {
-        let menu = NSMenu(title: "便签颜色")
-        let heading = NSMenuItem(title: "颜色", action: nil, keyEquivalent: "")
+        let menu = NSMenu(title: String(localized: "color.menu.title"))
+        let heading = NSMenuItem(title: String(localized: "color.menu.heading"), action: nil, keyEquivalent: "")
         heading.isEnabled = false
         menu.addItem(heading)
         menu.addItem(.separator())

@@ -11,11 +11,11 @@ struct TodoInputView: View {
                 .foregroundStyle(.black.opacity(0.55))
                 .accessibilityHidden(true)
 
-            TextField("添加待办事项…", text: $draft)
+            TextField("todo.input.placeholder", text: $draft)
                 .textFieldStyle(.plain)
                 .font(.system(size: 14))
                 .onSubmit(onSubmit)
-                .accessibilityLabel("添加待办事项")
+                .accessibilityLabel("todo.input.accessibility")
         }
         .padding(.horizontal, 11)
         .padding(.vertical, compact ? 7 : 9)

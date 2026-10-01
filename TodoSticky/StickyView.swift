@@ -49,7 +49,7 @@ struct StickyView: View {
                             }
 
                             if !compact, !store.completedTodos.isEmpty {
-                                Text("已完成事项")
+                                Text("todo.completed.section")
                                     .font(.system(size: 11, weight: .semibold))
                                     .tracking(0.4)
                                     .foregroundStyle(.black.opacity(0.42))
@@ -72,10 +72,10 @@ struct StickyView: View {
         }
         .frame(minWidth: 320, minHeight: 180)
         .preferredColorScheme(.light)
-        .alert("无法保存数据", isPresented: $store.isPersistenceErrorPresented) {
-            Button("好", role: .cancel) {}
+        .alert("alert.saveFailed.title", isPresented: $store.isPersistenceErrorPresented) {
+            Button("alert.ok", role: .cancel) {}
         } message: {
-            Text(store.persistenceErrorMessage ?? "本地存储不可用。")
+            Text(store.persistenceErrorMessage ?? String(localized: "error.storage.unavailable"))
         }
     }
 

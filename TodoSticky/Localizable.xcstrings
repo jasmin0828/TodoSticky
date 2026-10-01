@@ -1,0 +1,321 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "alert.ok" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "OK" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "好" } }
+      }
+    },
+    "alert.saveFailed.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Unable to Save Data" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "无法保存数据" } }
+      }
+    },
+    "app.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Todo Sticky" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Todo Sticky" } }
+      }
+    },
+    "color.blue" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Blue" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "蓝色" } }
+      }
+    },
+    "color.gray" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Gray" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "灰色" } }
+      }
+    },
+    "color.green" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Green" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "绿色" } }
+      }
+    },
+    "color.menu.accessibility" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sticky color" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "便签颜色" } }
+      }
+    },
+    "color.menu.heading" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Color" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "颜色" } }
+      }
+    },
+    "color.menu.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sticky Color" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "便签颜色" } }
+      }
+    },
+    "color.pink" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Pink" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "粉色" } }
+      }
+    },
+    "color.purple" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Purple" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "紫色" } }
+      }
+    },
+    "color.yellow" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Yellow" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "黄色" } }
+      }
+    },
+    "error.completion.invalidRevision" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The expected completion revision is invalid." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "预期的完成版本无效。" } }
+      }
+    },
+    "error.completion.notFound" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This Todo is no longer available." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "此待办事项已不存在。" } }
+      }
+    },
+    "error.completion.overflow" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The completion revision cannot be incremented." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "完成版本无法递增。" } }
+      }
+    },
+    "error.completion.staleConflict" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This Todo changed before the action could complete." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "此待办事项在操作完成前已发生变化。" } }
+      }
+    },
+    "error.completion.storageUnavailable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Todo state is unavailable." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "待办数据不可用。" } }
+      }
+    },
+    "error.storage.lockAcquire" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Unable to acquire storage lock" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "无法获取存储锁" } }
+      }
+    },
+    "error.storage.lockOpen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Unable to open storage lock" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "无法打开存储锁" } }
+      }
+    },
+    "error.storage.sharedUnavailable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The shared container is unavailable." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "共享容器不可用。" } }
+      }
+    },
+    "error.storage.unavailable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Local storage is unavailable." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "本地存储不可用。" } }
+      }
+    },
+    "error.todo.readFailure" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Local data could not be read; to avoid overwriting the original file, this change will not be saved." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "本地数据无法读取；为避免覆盖原文件，本次更改不会保存。" } }
+      }
+    },
+    "error.todo.saveFailure" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Unable to save local data; please check disk space and file permissions." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "无法保存本地数据；请检查磁盘空间和文件权限。" } }
+      }
+    },
+    "error.todo.sharedMigrationFailure" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Shared local data could not be migrated or accessed; to avoid overwriting the original file, this change will not be saved." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "共享本地数据无法迁移或访问；为避免覆盖原文件，本次更改不会保存。" } }
+      }
+    },
+    "intent.completed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Completed" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "已完成" } }
+      }
+    },
+    "intent.expectedRevision" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Expected Revision" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "预期版本" } }
+      }
+    },
+    "intent.setTodoCompletion.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Set Todo Completion" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "设置待办完成状态" } }
+      }
+    },
+    "intent.todo" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Todo" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "待办事项" } }
+      }
+    },
+    "todo.completed.section" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Completed" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "已完成事项" } }
+      }
+    },
+    "todo.delete.accessibility" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Delete todo" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "删除待办事项" } }
+      }
+    },
+    "todo.edit.accessibility" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Edit todo" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "编辑待办事项" } }
+      }
+    },
+    "todo.edit.hint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Press Return to save, or Escape to cancel" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "按 Return 保存，按 Escape 取消" } }
+      }
+    },
+    "todo.header.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Todos" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "待办" } }
+      }
+    },
+    "todo.input.accessibility" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Add todo" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "添加待办事项" } }
+      }
+    },
+    "todo.input.placeholder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Add a todo…" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "添加待办事项…" } }
+      }
+    },
+    "todo.status.completed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Completed" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "已完成" } }
+      }
+    },
+    "todo.status.open" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Not completed" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "未完成" } }
+      }
+    },
+    "widget.completeTodo" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Complete todo" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "完成待办事项" } }
+      }
+    },
+    "widget.configurationDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "View open todos on the desktop." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "在桌面查看未完成 Todo。" } }
+      }
+    },
+    "widget.configurationDisplayName" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "TodoSticky" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "TodoSticky" } }
+      }
+    },
+    "widget.noOpenTodos" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No open todos" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "没有未完成 Todo" } }
+      }
+    },
+    "widget.placeholder.planTheDay" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Plan the day" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "计划今天" } }
+      }
+    },
+    "widget.placeholder.reviewTodoSticky" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Review TodoSticky" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "检查 TodoSticky" } }
+      }
+    },
+    "widget.storageUnavailable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Shared data is temporarily unavailable" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "共享数据暂时不可用" } }
+      }
+    },
+    "widget.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "TodoSticky" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "TodoSticky" } }
+      }
+    }
+  },
+  "version" : "1.0"
+}
