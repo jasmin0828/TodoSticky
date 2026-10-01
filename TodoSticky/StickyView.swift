@@ -1,5 +1,15 @@
 import SwiftUI
 
+struct TodoRowPresentationID: Hashable {
+    let todoID: UUID
+    let completionRevision: Int
+
+    init(_ item: TodoItem) {
+        todoID = item.id
+        completionRevision = item.completionRevision
+    }
+}
+
 struct StickyView: View {
     @Bindable var store: TodoStore
     @State private var draft = ""
@@ -81,6 +91,7 @@ struct StickyView: View {
             onToggle: { store.toggleTodo(id: item.id) },
             onDelete: { store.deleteTodo(id: item.id) }
         )
+        .id(TodoRowPresentationID(item))
     }
 
     #if DEBUG

@@ -4,6 +4,31 @@ import XCTest
 @testable import TodoSticky
 
 final class TodoStoreTests: XCTestCase {
+    func testTodoRowPresentationIdentityChangesOnlyForCompletionRevisionOrTodoID() {
+        let todoID = UUID(uuidString: "0A1B2C3D-4E5F-4678-89AB-CDEF01234567")!
+        let original = TodoItem(id: todoID, title: "Before")
+
+        var renamed = original
+        renamed.title = "After"
+
+        var completed = renamed
+        completed.isCompleted = true
+        completed.completionRevision = 1
+
+        var restored = completed
+        restored.isCompleted = false
+        restored.completionRevision = 2
+
+        let anotherTodo = TodoItem(title: "Another")
+
+        XCTAssertEqual(TodoRowPresentationID(original), TodoRowPresentationID(renamed))
+        XCTAssertNotEqual(TodoRowPresentationID(original), TodoRowPresentationID(completed))
+        XCTAssertNotEqual(TodoRowPresentationID(completed), TodoRowPresentationID(restored))
+        XCTAssertNotEqual(TodoRowPresentationID(original), TodoRowPresentationID(anotherTodo))
+        XCTAssertEqual(original.id, completed.id)
+        XCTAssertEqual(completed.id, restored.id)
+    }
+
     func testCreateTrimsWhitespaceAndRejectsEmptyInput() async throws {
         let (file, directory) = try Self.makeTemporaryFile()
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -316,6 +341,199 @@ final class TodoStoreTests: XCTestCase {
         XCTAssertEqual(try intent.execute(using: file), .changed)
         XCTAssertTrue(try file.load().todos[0].isCompleted)
         XCTAssertEqual(try file.load().todos[0].completionRevision, 1)
+    }
+
+    func testCompletionIntentInvalidatesOnlyAfterSuccessfulCanonicalWrite() throws {
+        let (file, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let todo = TodoItem(title: "Signal after write")
+        try file.save(StickyAppState(todos: [todo]))
+        let intent = SetTodoCompletionIntent(
+            todo: TodoReference(id: todo.id),
+            targetState: true,
+            expectedRevision: 0
+        )
+        var signalCount = 0
+
+        XCTAssertEqual(try intent.executeAndInvalidate(using: file) {
+            signalCount += 1
+            do {
+                let persisted = try file.load().todos[0]
+                XCTAssertTrue(persisted.isCompleted)
+                XCTAssertEqual(persisted.completionRevision, 1)
+            } catch {
+                XCTFail("Signal preceded durable persistence: \(error)")
+            }
+        }, .changed)
+        XCTAssertEqual(signalCount, 1)
+        let canonicalBytes = try Data(contentsOf: file.fileURL)
+
+        XCTAssertEqual(try intent.executeAndInvalidate(using: file) {
+            signalCount += 1
+        }, .alreadyAtTarget)
+        XCTAssertEqual(signalCount, 1)
+        XCTAssertEqual(try Data(contentsOf: file.fileURL), canonicalBytes)
+
+        let failingFile = TodoStateFile(fileURL: file.fileURL) { _, _ in
+            throw TestPersistenceError.writeFailed
+        }
+        let restoreIntent = SetTodoCompletionIntent(
+            todo: TodoReference(id: todo.id),
+            targetState: false,
+            expectedRevision: 1
+        )
+        XCTAssertThrowsError(try restoreIntent.executeAndInvalidate(using: failingFile) {
+            signalCount += 1
+        })
+        XCTAssertEqual(signalCount, 1)
+        XCTAssertEqual(try Data(contentsOf: file.fileURL), canonicalBytes)
+
+        let missing = SetTodoCompletionIntent(
+            todo: TodoReference(id: UUID()),
+            targetState: true,
+            expectedRevision: 0
+        )
+        XCTAssertThrowsError(try missing.executeAndInvalidate(using: file) {
+            signalCount += 1
+        })
+        XCTAssertEqual(signalCount, 1)
+        XCTAssertEqual(try Data(contentsOf: file.fileURL), canonicalBytes)
+    }
+
+    func testExternalInvalidationReloadsCanonicalStateWithoutWritingOrLosingAppMutation() async throws {
+        let (file, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let todo = TodoItem(title: "External change")
+        try file.save(StickyAppState(todos: [todo]))
+        let store = await MainActor.run { TodoStore(file: file) }
+        let name = "com.jasminstudio.TodoSticky.test.\(UUID().uuidString)"
+        let received = expectation(description: "Darwin invalidation delivered")
+        received.assertForOverFulfill = false
+        let observer = TodoStateInvalidationObserver(name: name) {
+            Task { @MainActor in
+                XCTAssertTrue(store.reloadFromDisk())
+                received.fulfill()
+            }
+        }
+
+        XCTAssertEqual(
+            try file.setCompletion(id: todo.id, targetState: true, expectedRevision: 0).disposition,
+            .changed
+        )
+        // The app can commit while its in-memory snapshot is stale; the file lock
+        // makes that commit read the external change before writing.
+        let appMutationSucceeded = await MainActor.run { store.addTodo(title: "Local change") }
+        XCTAssertTrue(appMutationSucceeded)
+        let canonicalBytes = try Data(contentsOf: file.fileURL)
+        TodoStateInvalidation.post(name: name)
+        TodoStateInvalidation.post(name: name)
+        await fulfillment(of: [received], timeout: 5)
+        withExtendedLifetime(observer) {}
+
+        let displayed = await MainActor.run { store.todos }
+        XCTAssertEqual(displayed.count, 2)
+        XCTAssertTrue(displayed.first { $0.id == todo.id }?.isCompleted == true)
+        XCTAssertEqual(displayed.first { $0.id == todo.id }?.completionRevision, 1)
+        XCTAssertEqual(try Data(contentsOf: file.fileURL), canonicalBytes)
+        XCTAssertEqual(try file.load().todos.count, 2)
+    }
+
+    func testExternalCompletionSignalReloadsAlreadyLoadedStoreWithoutWriting() async throws {
+        let (file, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let todo = TodoItem(title: "External completion signal")
+        try file.save(StickyAppState(todos: [todo]))
+        let store = await MainActor.run { TodoStore(file: file) }
+        let name = "com.jasminstudio.TodoSticky.test.\(UUID().uuidString)"
+        let received = expectation(description: "External completion invalidation")
+        let observer = TodoStateInvalidationObserver(name: name) {
+            Task { @MainActor in
+                XCTAssertTrue(store.reloadFromDisk())
+                received.fulfill()
+            }
+        }
+
+        XCTAssertEqual(
+            try file.setCompletion(id: todo.id, targetState: true, expectedRevision: 0).disposition,
+            .changed
+        )
+        let canonicalBytes = try Data(contentsOf: file.fileURL)
+        let preSignal = await MainActor.run { store.todos[0] }
+        XCTAssertFalse(preSignal.isCompleted)
+        XCTAssertEqual(preSignal.completionRevision, 0)
+
+        TodoStateInvalidation.post(name: name)
+        await fulfillment(of: [received], timeout: 5)
+        withExtendedLifetime(observer) {}
+
+        let postSignal = await MainActor.run { store.todos[0] }
+        XCTAssertTrue(postSignal.isCompleted)
+        XCTAssertEqual(postSignal.completionRevision, 1)
+        XCTAssertEqual(try Data(contentsOf: file.fileURL), canonicalBytes)
+    }
+
+    func testInvalidationWithoutCanonicalChangeHasNoTodoPayloadAuthority() async throws {
+        let (file, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let todo = TodoItem(title: "Only canonical Todo")
+        try file.save(StickyAppState(todos: [todo]))
+        let originalBytes = try Data(contentsOf: file.fileURL)
+        let store = await MainActor.run { TodoStore(file: file) }
+        let name = "com.jasminstudio.TodoSticky.test.\(UUID().uuidString)"
+        let received = expectation(description: "Payload-free invalidation delivered")
+        let observer = TodoStateInvalidationObserver(name: name) {
+            Task { @MainActor in
+                XCTAssertTrue(store.reloadFromDisk())
+                received.fulfill()
+            }
+        }
+
+        TodoStateInvalidation.post(name: name)
+        await fulfillment(of: [received], timeout: 5)
+        withExtendedLifetime(observer) {}
+
+        let displayed = await MainActor.run { store.todos }
+        XCTAssertEqual(displayed.count, 1)
+        XCTAssertEqual(displayed[0].id, todo.id)
+        XCTAssertFalse(displayed[0].isCompleted)
+        XCTAssertEqual(try Data(contentsOf: file.fileURL), originalBytes)
+    }
+
+    func testCoalescedInvalidationReloadsLatestRapidExternalState() async throws {
+        let (file, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let todo = TodoItem(title: "Rapid external change")
+        try file.save(StickyAppState(todos: [todo]))
+        let store = await MainActor.run { TodoStore(file: file) }
+        let name = "com.jasminstudio.TodoSticky.test.\(UUID().uuidString)"
+        let received = expectation(description: "At least one invalidation delivered")
+        received.assertForOverFulfill = false
+        let observer = TodoStateInvalidationObserver(name: name) {
+            Task { @MainActor in
+                XCTAssertTrue(store.reloadFromDisk())
+                received.fulfill()
+            }
+        }
+
+        XCTAssertEqual(
+            try file.setCompletion(id: todo.id, targetState: true, expectedRevision: 0).disposition,
+            .changed
+        )
+        TodoStateInvalidation.post(name: name)
+        XCTAssertEqual(
+            try file.setCompletion(id: todo.id, targetState: false, expectedRevision: 1).disposition,
+            .changed
+        )
+        let canonicalBytes = try Data(contentsOf: file.fileURL)
+        TodoStateInvalidation.post(name: name)
+        await fulfillment(of: [received], timeout: 5)
+        withExtendedLifetime(observer) {}
+
+        let displayed = await MainActor.run { store.todos }
+        XCTAssertEqual(displayed.count, 1)
+        XCTAssertFalse(displayed[0].isCompleted)
+        XCTAssertEqual(displayed[0].completionRevision, 2)
+        XCTAssertEqual(try Data(contentsOf: file.fileURL), canonicalBytes)
     }
 
     func testCompletionIntentDuplicateIsIdempotent() throws {

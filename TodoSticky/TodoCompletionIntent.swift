@@ -1,5 +1,21 @@
 import AppIntents
+import CoreFoundation
 import Foundation
+
+enum TodoStateInvalidation {
+    static let name = "com.jasminstudio.TodoSticky.shared-state-changed"
+
+    static func post(name: String = name) {
+        guard let center = CFNotificationCenterGetDarwinNotifyCenter() else { return }
+        CFNotificationCenterPostNotification(
+            center,
+            CFNotificationName(name as CFString),
+            nil,
+            nil,
+            true
+        )
+    }
+}
 
 struct TodoReference: AppEntity, Equatable {
     static var typeDisplayRepresentation: TypeDisplayRepresentation { "Todo" }
@@ -78,8 +94,20 @@ struct SetTodoCompletionIntent: AppIntent {
             throw TodoCompletionIntentError.storageUnavailable
         }
 
-        _ = try execute(using: stateFile)
+        _ = try executeAndInvalidate(using: stateFile)
         return .result()
+    }
+
+    @discardableResult
+    func executeAndInvalidate(
+        using stateFile: TodoStateFile,
+        signal: () -> Void = { TodoStateInvalidation.post() }
+    ) throws -> TodoCompletionMutationDisposition {
+        let disposition = try execute(using: stateFile)
+        if disposition == .changed {
+            signal()
+        }
+        return disposition
     }
 
     func execute(using stateFile: TodoStateFile) throws -> TodoCompletionMutationDisposition {

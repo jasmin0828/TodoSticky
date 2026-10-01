@@ -1,6 +1,42 @@
 import AppKit
+import CoreFoundation
 import CoreGraphics
 import SwiftUI
+
+final class TodoStateInvalidationObserver {
+    private let name: CFNotificationName
+    private let onChange: @Sendable () -> Void
+
+    init(name: String = TodoStateInvalidation.name, onChange: @escaping @Sendable () -> Void) {
+        self.name = CFNotificationName(name as CFString)
+        self.onChange = onChange
+
+        guard let center = CFNotificationCenterGetDarwinNotifyCenter() else { return }
+        CFNotificationCenterAddObserver(
+            center,
+            Unmanaged.passUnretained(self).toOpaque(),
+            { _, observer, _, _, _ in
+                guard let observer else { return }
+                let listener = Unmanaged<TodoStateInvalidationObserver>
+                    .fromOpaque(observer).takeUnretainedValue()
+                listener.onChange()
+            },
+            self.name.rawValue,
+            nil,
+            .deliverImmediately
+        )
+    }
+
+    deinit {
+        guard let center = CFNotificationCenterGetDarwinNotifyCenter() else { return }
+        CFNotificationCenterRemoveObserver(
+            center,
+            Unmanaged.passUnretained(self).toOpaque(),
+            name,
+            nil
+        )
+    }
+}
 
 @main
 struct TodoStickyApp: App {
@@ -20,10 +56,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var stickyWindow: NSWindow?
     private var isClosingStickyWindow = false
     private var todoStore: TodoStore?
+    private var stateInvalidationObserver: TodoStateInvalidationObserver?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let store = TodoStore.applicationStore()
         todoStore = store
+        stateInvalidationObserver = TodoStateInvalidationObserver { [weak store] in
+            Task { @MainActor in
+                store?.reloadFromDisk()
+            }
+        }
+        // Close the gap between the initial load and observer registration.
+        store.reloadFromDisk()
 
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 360, height: 460),
