@@ -5,26 +5,51 @@ enum TodoStateFileError: LocalizedError, Equatable, Sendable {
     case sharedContainerUnavailable(String)
     case unableToOpenLock(path: String, errno: Int32)
     case unableToAcquireLock(path: String, errno: Int32)
+    case invalidExpectedCompletionRevision
+    case completionRevisionOverflow
 
     var errorDescription: String? {
         switch self {
-        case let .sharedContainerUnavailable(identifier):
-            "The shared container is unavailable for app group \(identifier)."
-        case let .unableToOpenLock(path, error):
-            "Unable to open storage lock at \(path) (errno \(error))."
-        case let .unableToAcquireLock(path, error):
-            "Unable to acquire storage lock at \(path) (errno \(error))."
+        case .sharedContainerUnavailable:
+            "The shared container is unavailable."
+        case let .unableToOpenLock(_, error):
+            "Unable to open storage lock (errno \(error))."
+        case let .unableToAcquireLock(_, error):
+            "Unable to acquire storage lock (errno \(error))."
+        case .invalidExpectedCompletionRevision:
+            "The expected completion revision is invalid."
+        case .completionRevisionOverflow:
+            "The completion revision cannot be incremented."
         }
     }
+}
+
+enum TodoCompletionMutationDisposition: Equatable, Sendable {
+    case changed
+    case alreadyAtTarget
+    case notFound
+    case staleConflict
+}
+
+struct TodoCompletionMutationResult: Equatable, Sendable {
+    let disposition: TodoCompletionMutationDisposition
+    let canonicalState: StickyAppState
 }
 
 struct TodoStateFile: Sendable {
     static let applicationGroupIdentifier = "group.com.jasminstudio.TodoSticky"
 
     let fileURL: URL
+    private let persistenceWriter: @Sendable (Data, URL) throws -> Void
 
     init(fileURL: URL) {
         self.fileURL = fileURL
+        persistenceWriter = Self.writeAtomically
+    }
+
+    init(fileURL: URL, persistenceWriter: @escaping @Sendable (Data, URL) throws -> Void) {
+        self.fileURL = fileURL
+        self.persistenceWriter = persistenceWriter
     }
 
     static func applicationSupport() throws -> TodoStateFile {
@@ -73,6 +98,56 @@ struct TodoStateFile: Sendable {
         }
     }
 
+    func setCompletion(
+        id: UUID,
+        targetState: Bool,
+        expectedRevision: Int
+    ) throws -> TodoCompletionMutationResult {
+        guard expectedRevision >= 0 else {
+            throw TodoStateFileError.invalidExpectedCompletionRevision
+        }
+
+        var disposition: TodoCompletionMutationDisposition = .notFound
+        var canonicalState: StickyAppState?
+
+        _ = try mutate { state in
+            canonicalState = state
+            guard let index = state.todos.firstIndex(where: { $0.id == id }) else {
+                disposition = .notFound
+                return false
+            }
+
+            let todo = state.todos[index]
+            guard todo.completionRevision == expectedRevision else {
+                disposition = todo.isCompleted == targetState ? .alreadyAtTarget : .staleConflict
+                return false
+            }
+
+            guard todo.isCompleted != targetState else {
+                disposition = .alreadyAtTarget
+                return false
+            }
+
+            guard todo.completionRevision < Int.max else {
+                throw TodoStateFileError.completionRevisionOverflow
+            }
+
+            state.todos[index].isCompleted = targetState
+            state.todos[index].completionRevision += 1
+            disposition = .changed
+            canonicalState = state
+            return true
+        }
+
+        guard let canonicalState else {
+            preconditionFailure("A state mutation must evaluate the canonical state.")
+        }
+        return TodoCompletionMutationResult(
+            disposition: disposition,
+            canonicalState: canonicalState
+        )
+    }
+
     /// Copies a valid legacy state into the shared container exactly once.
     /// An existing shared file always wins and is never overwritten.
     @discardableResult
@@ -110,6 +185,10 @@ struct TodoStateFile: Sendable {
             at: fileURL.deletingLastPathComponent(),
             withIntermediateDirectories: true
         )
+        try persistenceWriter(data, fileURL)
+    }
+
+    private static func writeAtomically(_ data: Data, _ fileURL: URL) throws {
         try data.write(to: fileURL, options: .atomic)
     }
 

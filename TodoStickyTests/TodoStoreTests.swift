@@ -8,16 +8,17 @@ final class TodoStoreTests: XCTestCase {
         let (file, directory) = try Self.makeTemporaryFile()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let result = await MainActor.run { () -> (Bool, Bool, [String]) in
+        let result = await MainActor.run { () -> (Bool, Bool, [TodoItem]) in
             let store = TodoStore(file: file)
             let rejected = store.addTodo(title: " \n\t ")
             let created = store.addTodo(title: "  Buy milk  ")
-            return (rejected, created, store.openTodos.map(\.title))
+            return (rejected, created, store.todos)
         }
 
         XCTAssertFalse(result.0)
         XCTAssertTrue(result.1)
-        XCTAssertEqual(result.2, ["Buy milk"])
+        XCTAssertEqual(result.2.map(\.title), ["Buy milk"])
+        XCTAssertEqual(result.2[0].completionRevision, 0)
     }
 
     func testToggleCompletesAndRestoresTodo() async throws {
@@ -38,7 +39,233 @@ final class TodoStoreTests: XCTestCase {
         XCTAssertTrue(result.0[0].isCompleted)
         XCTAssertEqual(result.1.map(\.title), ["Review notes"])
         XCTAssertFalse(result.1[0].isCompleted)
+        XCTAssertEqual(result.0[0].completionRevision, 1)
+        XCTAssertEqual(result.1[0].completionRevision, 2)
         XCTAssertTrue(result.2.isEmpty)
+    }
+
+    func testLegacyTodoDecodesWithZeroRevisionAndPersistsRevisionAfterMutation() throws {
+        let (file, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let id = UUID()
+        let legacyJSON = """
+        {"todos":[{"id":"\(id.uuidString)","title":"Legacy","isCompleted":false,"createdAt":0}],"selectedColor":"yellow"}
+        """
+        try Data(legacyJSON.utf8).write(to: file.fileURL)
+
+        XCTAssertEqual(try file.load().todos.first?.completionRevision, 0)
+
+        let result = try file.setCompletion(id: id, targetState: true, expectedRevision: 0)
+
+        XCTAssertEqual(result.disposition, .changed)
+        XCTAssertEqual(result.canonicalState.todos.first?.completionRevision, 1)
+        XCTAssertEqual(try file.load().todos.first?.completionRevision, 1)
+    }
+
+    func testCompletionMutationChangesOnceAndMatchingAlreadyTargetIsNoOp() throws {
+        let (file, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let todo = TodoItem(title: "Complete me")
+        try file.save(StickyAppState(todos: [todo]))
+
+        let changed = try file.setCompletion(id: todo.id, targetState: true, expectedRevision: 0)
+        XCTAssertEqual(changed.disposition, .changed)
+        XCTAssertTrue(changed.canonicalState.todos[0].isCompleted)
+        XCTAssertEqual(changed.canonicalState.todos[0].completionRevision, 1)
+
+        let bytesAfterChange = try Data(contentsOf: file.fileURL)
+        let alreadyTarget = try file.setCompletion(id: todo.id, targetState: true, expectedRevision: 1)
+
+        XCTAssertEqual(alreadyTarget.disposition, .alreadyAtTarget)
+        XCTAssertEqual(alreadyTarget.canonicalState.todos[0].completionRevision, 1)
+        XCTAssertEqual(try Data(contentsOf: file.fileURL), bytesAfterChange)
+    }
+
+    func testRepeatedOldRequestIsIdempotentWithoutSecondWrite() throws {
+        let (file, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let todo = TodoItem(title: "Duplicate request")
+        try file.save(StickyAppState(todos: [todo]))
+
+        XCTAssertEqual(
+            try file.setCompletion(id: todo.id, targetState: true, expectedRevision: 0).disposition,
+            .changed
+        )
+        let bytesAfterFirstRequest = try Data(contentsOf: file.fileURL)
+
+        let repeated = try file.setCompletion(id: todo.id, targetState: true, expectedRevision: 0)
+
+        XCTAssertEqual(repeated.disposition, .alreadyAtTarget)
+        XCTAssertEqual(repeated.canonicalState.todos[0].completionRevision, 1)
+        XCTAssertEqual(try Data(contentsOf: file.fileURL), bytesAfterFirstRequest)
+    }
+
+    func testStaleConflictingRequestDoesNotWriteOrChangeState() throws {
+        let (file, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let todo = TodoItem(title: "Stale request")
+        try file.save(StickyAppState(todos: [todo]))
+        _ = try file.setCompletion(id: todo.id, targetState: true, expectedRevision: 0)
+        let bytesBeforeStaleRequest = try Data(contentsOf: file.fileURL)
+
+        let stale = try file.setCompletion(id: todo.id, targetState: false, expectedRevision: 0)
+
+        XCTAssertEqual(stale.disposition, .staleConflict)
+        XCTAssertTrue(stale.canonicalState.todos[0].isCompleted)
+        XCTAssertEqual(stale.canonicalState.todos[0].completionRevision, 1)
+        XCTAssertEqual(try Data(contentsOf: file.fileURL), bytesBeforeStaleRequest)
+    }
+
+    func testMissingTodoDoesNotChangePersistedState() throws {
+        let (file, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try file.save(StickyAppState(todos: [TodoItem(title: "Existing")]))
+        let bytesBeforeRequest = try Data(contentsOf: file.fileURL)
+
+        let missing = try file.setCompletion(id: UUID(), targetState: true, expectedRevision: 0)
+
+        XCTAssertEqual(missing.disposition, .notFound)
+        XCTAssertEqual(try Data(contentsOf: file.fileURL), bytesBeforeRequest)
+    }
+
+    func testConcurrentCompletionMutationsPreserveUnrelatedTodos() throws {
+        let (file, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let todoA = TodoItem(title: "Todo A")
+        let todoB = TodoItem(title: "Todo B")
+        try file.save(StickyAppState(todos: [todoA, todoB]))
+        let errors = MutationErrorBox()
+
+        DispatchQueue.concurrentPerform(iterations: 2) { index in
+            let todo = index == 0 ? todoA : todoB
+            do {
+                let result = try file.setCompletion(
+                    id: todo.id,
+                    targetState: true,
+                    expectedRevision: todo.completionRevision
+                )
+                guard result.disposition == .changed else {
+                    errors.append(TestMutationError.noMutation)
+                    return
+                }
+            } catch {
+                errors.append(error)
+            }
+        }
+
+        XCTAssertTrue(errors.errors.isEmpty, "Unexpected mutation errors: \(errors.errors)")
+        let finalState = try file.load()
+        XCTAssertEqual(finalState.todos.count, 2)
+        XCTAssertTrue(finalState.todos.allSatisfy(\.isCompleted))
+        XCTAssertTrue(finalState.todos.allSatisfy { $0.completionRevision == 1 })
+    }
+
+    func testTitleEditsDoNotIncrementCompletionRevision() async throws {
+        let (file, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let revisions = await MainActor.run { () -> (Int, Int, Int) in
+            let store = TodoStore(file: file)
+            store.addTodo(title: "Before")
+            let id = store.todos[0].id
+            let initialRevision = store.todos[0].completionRevision
+            store.updateTodoTitle(id: id, title: "After title edit")
+            let afterTitleEdit = store.todos[0].completionRevision
+            store.toggleTodo(id: id)
+            store.updateTodoTitle(id: id, title: "Completed title edit")
+            return (initialRevision, afterTitleEdit, store.todos[0].completionRevision)
+        }
+
+        XCTAssertEqual(revisions.0, 0)
+        XCTAssertEqual(revisions.1, 0)
+        XCTAssertEqual(revisions.2, 1)
+        XCTAssertEqual(try file.load().todos.first?.completionRevision, 1)
+    }
+
+    func testCompletionMutationPreservesMalformedPersistedBytes() throws {
+        let (file, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let original = Data("not valid state".utf8)
+        try original.write(to: file.fileURL)
+
+        XCTAssertThrowsError(try file.setCompletion(id: UUID(), targetState: true, expectedRevision: 0))
+        XCTAssertEqual(try Data(contentsOf: file.fileURL), original)
+    }
+
+    func testNegativePersistedCompletionRevisionFailsClosed() throws {
+        let (file, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let id = UUID()
+        let invalidJSON = """
+        {"todos":[{"id":"\(id.uuidString)","title":"Invalid revision","isCompleted":false,"completionRevision":-1,"createdAt":0}],"selectedColor":"yellow"}
+        """
+        let original = Data(invalidJSON.utf8)
+        try original.write(to: file.fileURL)
+
+        XCTAssertThrowsError(try file.setCompletion(id: id, targetState: true, expectedRevision: 0))
+        XCTAssertEqual(try Data(contentsOf: file.fileURL), original)
+    }
+
+    func testCompletionRevisionOverflowFailsWithoutChangingPersistedState() throws {
+        let (file, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let todo = TodoItem(title: "Maximum revision")
+        try file.save(StickyAppState(todos: [todo]))
+        _ = try file.mutate { state in
+            state.todos[0].completionRevision = Int.max
+            return true
+        }
+        let bytesAtMaximum = try Data(contentsOf: file.fileURL)
+
+        XCTAssertThrowsError(
+            try file.setCompletion(id: todo.id, targetState: true, expectedRevision: Int.max)
+        ) { error in
+            XCTAssertEqual(error as? TodoStateFileError, .completionRevisionOverflow)
+        }
+        XCTAssertEqual(try Data(contentsOf: file.fileURL), bytesAtMaximum)
+        XCTAssertEqual(try file.load().todos[0].completionRevision, Int.max)
+        XCTAssertFalse(try file.load().todos[0].isCompleted)
+    }
+
+    func testCompletionPersistenceFailurePreservesCanonicalAndTodoStoreState() async throws {
+        let (canonicalFile, directory) = try Self.makeTemporaryFile()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let todo = TodoItem(
+            title: "Persist only on success",
+            createdAt: Date(timeIntervalSince1970: 1_700_000_000)
+        )
+        let originalState = StickyAppState(todos: [todo])
+        try canonicalFile.save(originalState)
+        let originalBytes = try Data(contentsOf: canonicalFile.fileURL)
+        let failingFile = TodoStateFile(fileURL: canonicalFile.fileURL) { _, _ in
+            throw TestPersistenceError.writeFailed
+        }
+
+        XCTAssertThrowsError(
+            try failingFile.setCompletion(id: todo.id, targetState: true, expectedRevision: 0)
+        ) { error in
+            XCTAssertEqual(error as? TestPersistenceError, .writeFailed)
+        }
+        XCTAssertEqual(try Data(contentsOf: canonicalFile.fileURL), originalBytes)
+        XCTAssertEqual(try canonicalFile.load(), originalState)
+
+        let storeResult = await MainActor.run { () -> (Bool, Bool, Bool?, Int?) in
+            let store = TodoStore(file: failingFile)
+            let toggled = store.toggleTodo(id: todo.id)
+            return (
+                toggled,
+                store.isPersistenceErrorPresented,
+                store.todos.first?.isCompleted,
+                store.todos.first?.completionRevision
+            )
+        }
+
+        XCTAssertFalse(storeResult.0, "TodoStore must not report a failed persistence as success.")
+        XCTAssertTrue(storeResult.1, "TodoStore should surface its existing generic persistence error.")
+        XCTAssertEqual(storeResult.2, false)
+        XCTAssertEqual(storeResult.3, 0)
+        XCTAssertEqual(try Data(contentsOf: canonicalFile.fileURL), originalBytes)
+        XCTAssertEqual(try canonicalFile.load(), originalState)
     }
 
     func testDeleteRemovesTodo() async throws {
@@ -345,4 +572,8 @@ private final class MutationErrorBox: @unchecked Sendable {
 
 private enum TestMutationError: Error {
     case noMutation
+}
+
+private enum TestPersistenceError: Error, Equatable {
+    case writeFailed
 }

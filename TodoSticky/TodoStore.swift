@@ -58,10 +58,34 @@ final class TodoStore {
 
     @discardableResult
     func toggleTodo(id: UUID) -> Bool {
-        commit { state in
-            guard let index = state.todos.firstIndex(where: { $0.id == id }) else { return false }
-            state.todos[index].isCompleted.toggle()
-            return true
+        guard canWriteState,
+              let stateFile,
+              let todo = state.todos.first(where: { $0.id == id }) else {
+            return false
+        }
+
+        do {
+            let result = try stateFile.setCompletion(
+                id: id,
+                targetState: !todo.isCompleted,
+                expectedRevision: todo.completionRevision
+            )
+            state = result.canonicalState
+
+            switch result.disposition {
+            case .changed:
+                clearPersistenceError()
+                WidgetCenter.shared.reloadTimelines(ofKind: "TodoStickyWidget")
+                return true
+            case .alreadyAtTarget:
+                clearPersistenceError()
+                return true
+            case .notFound, .staleConflict:
+                return false
+            }
+        } catch {
+            showPersistenceError("无法保存本地数据；请检查磁盘空间和文件权限。")
+            return false
         }
     }
 
@@ -131,8 +155,7 @@ final class TodoStore {
                 return false
             }
             state = updatedState
-            persistenceErrorMessage = nil
-            isPersistenceErrorPresented = false
+            clearPersistenceError()
             WidgetCenter.shared.reloadTimelines(ofKind: "TodoStickyWidget")
             return true
         } catch {
@@ -144,5 +167,10 @@ final class TodoStore {
     private func showPersistenceError(_ message: String) {
         persistenceErrorMessage = message
         isPersistenceErrorPresented = true
+    }
+
+    private func clearPersistenceError() {
+        persistenceErrorMessage = nil
+        isPersistenceErrorPresented = false
     }
 }
