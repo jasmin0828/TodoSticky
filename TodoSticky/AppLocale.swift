@@ -33,6 +33,20 @@ enum AppLocaleResolver {
         return value ?? key
     }
 
+    static func locale(
+        for preferences: LanguagePreferences?,
+        systemLocale: Locale = .current
+    ) -> Locale {
+        locale(for: preferences?.language ?? .system, systemLocale: systemLocale)
+    }
+
+    static func appGroupLocale(systemLocale: Locale = .current) -> Locale {
+        locale(
+            for: try? LanguagePreferences.appGroup(),
+            systemLocale: systemLocale
+        )
+    }
+
     static func locale(for language: AppLanguage, systemLocale: Locale = .current) -> Locale {
         switch language {
         case .system:

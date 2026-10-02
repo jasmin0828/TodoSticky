@@ -52,6 +52,32 @@ final class AppLocaleTests: XCTestCase {
         XCTAssertEqual(locale.language.languageCode?.identifier, "en")
     }
 
+    func testSharedPreferencesResolveExplicitChinese() throws {
+        let (defaults, suiteName) = try makeDefaults()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        defaults.set(AppLanguage.simplifiedChinese.rawValue, forKey: LanguagePreferences.languageKey)
+
+        let locale = AppLocaleResolver.locale(
+            for: LanguagePreferences(defaults: defaults),
+            systemLocale: Locale(identifier: "en-US")
+        )
+
+        XCTAssertEqual(locale.identifier, "zh-Hans")
+    }
+
+    func testSharedPreferencesMissingValueFollowsSystemWithoutWriting() throws {
+        let (defaults, suiteName) = try makeDefaults()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let locale = AppLocaleResolver.locale(
+            for: LanguagePreferences(defaults: defaults),
+            systemLocale: Locale(identifier: "zh-Hans-CN")
+        )
+
+        XCTAssertEqual(locale.identifier, "zh-Hans")
+        XCTAssertNil(defaults.object(forKey: LanguagePreferences.languageKey))
+    }
+
     func testCatalogContainsEnglishAndSimplifiedChineseTranslations() throws {
         let appBundle = try XCTUnwrap(Bundle(identifier: "com.jasminstudio.TodoSticky"))
         let englishPath = try XCTUnwrap(appBundle.path(forResource: "en", ofType: "lproj"))
@@ -72,4 +98,16 @@ final class AppLocaleTests: XCTestCase {
             "共享数据暂时不可用"
         )
     }
+
+    private func makeDefaults() throws -> (UserDefaults, String) {
+        let suiteName = "TodoStickyTests.AppLocale.\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suiteName) else {
+            throw TestError.unableToCreateDefaults
+        }
+        return (defaults, suiteName)
+    }
+}
+
+private enum TestError: Error {
+    case unableToCreateDefaults
 }

@@ -5,6 +5,19 @@ struct TodoStickyWidgetEntry: TimelineEntry {
     let date: Date
     let state: StickyAppState
     let storageError: Bool
+    let isPlaceholder: Bool
+
+    init(
+        date: Date,
+        state: StickyAppState,
+        storageError: Bool,
+        isPlaceholder: Bool = false
+    ) {
+        self.date = date
+        self.state = state
+        self.storageError = storageError
+        self.isPlaceholder = isPlaceholder
+    }
 
     var openTodos: [TodoItem] {
         state.todos
@@ -22,10 +35,11 @@ struct TodoStickyWidgetEntry: TimelineEntry {
     static let placeholder = TodoStickyWidgetEntry(
         date: .now,
         state: StickyAppState(todos: [
-            TodoItem(title: String(localized: "widget.placeholder.planTheDay")),
-            TodoItem(title: String(localized: "widget.placeholder.reviewTodoSticky"))
+            TodoItem(title: "widget.placeholder.planTheDay"),
+            TodoItem(title: "widget.placeholder.reviewTodoSticky")
         ]),
-        storageError: false
+        storageError: false,
+        isPlaceholder: true
     )
 }
 
@@ -68,6 +82,10 @@ struct TodoStickyWidgetView: View {
 
     @Environment(\.widgetFamily) private var family
 
+    private var effectiveLocale: Locale {
+        AppLocaleResolver.appGroupLocale()
+    }
+
     private var visibleTodos: ArraySlice<TodoItem> {
         let limit = family == .systemSmall ? 3 : 5
         return entry.openTodos.prefix(limit)
@@ -105,9 +123,15 @@ struct TodoStickyWidgetView: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("widget.completeTodo")
-                        Text(todo.title)
-                            .font(.caption)
-                            .lineLimit(1)
+                        if entry.isPlaceholder {
+                            Text(LocalizedStringKey(todo.title))
+                                .font(.caption)
+                                .lineLimit(1)
+                        } else {
+                            Text(verbatim: todo.title)
+                                .font(.caption)
+                                .lineLimit(1)
+                        }
                     }
                 }
             }
@@ -118,6 +142,7 @@ struct TodoStickyWidgetView: View {
         .containerBackground(for: .widget) {
             Color.yellow.opacity(0.22)
         }
+        .environment(\.locale, effectiveLocale)
     }
 }
 

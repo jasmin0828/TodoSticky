@@ -30,6 +30,7 @@
 		A20000000000000000000012 /* AppBuildInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000004B /* AppBuildInfo.swift */; };
 		A20000000000000000000013 /* SettingsColorControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000004D /* SettingsColorControl.swift */; };
 		A20000000000000000000070 /* LaunchAtLoginController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000072 /* LaunchAtLoginController.swift */; };
+		A20000000000000000000074 /* WidgetTimelineReloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000075 /* WidgetTimelineReloader.swift */; };
 		A20000000000000000000020 /* TodoStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000040 /* TodoStoreTests.swift */; };
 		A20000000000000000000022 /* LanguagePreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000046 /* LanguagePreferencesTests.swift */; };
 		A20000000000000000000023 /* AppLocaleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000048 /* AppLocaleTests.swift */; };
@@ -118,6 +119,7 @@
 		A2000000000000000000004F /* SettingsColorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsColorTests.swift; sourceTree = "<group>"; };
 		A20000000000000000000072 /* LaunchAtLoginController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginController.swift; sourceTree = "<group>"; };
 		A20000000000000000000073 /* LaunchAtLoginControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginControllerTests.swift; sourceTree = "<group>"; };
+		A20000000000000000000075 /* WidgetTimelineReloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetTimelineReloader.swift; sourceTree = "<group>"; };
 		A20000000000000000000051 /* TodoStickyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TodoStickyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A30000000000000000000002 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A30000000000000000000003 /* TodoSticky.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TodoSticky.entitlements; sourceTree = "<group>"; };
@@ -203,6 +205,7 @@
 				A2000000000000000000004B /* AppBuildInfo.swift */,
 				A2000000000000000000004D /* SettingsColorControl.swift */,
 				A20000000000000000000072 /* LaunchAtLoginController.swift */,
+				A20000000000000000000075 /* WidgetTimelineReloader.swift */,
 			);
 			path = TodoSticky;
 			sourceTree = "<group>";
@@ -389,6 +392,7 @@
 				A20000000000000000000012 /* AppBuildInfo.swift in Sources */,
 				A20000000000000000000013 /* SettingsColorControl.swift in Sources */,
 				A20000000000000000000070 /* LaunchAtLoginController.swift in Sources */,
+				A20000000000000000000074 /* WidgetTimelineReloader.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

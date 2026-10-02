@@ -54,7 +54,9 @@ struct TodoStickyApp: App {
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
-    let languageController = AppLanguageController()
+    let languageController = AppLanguageController(
+        reloadWidgetTimelines: WidgetTimelineReloader.reloadAllTimelines
+    )
     let launchAtLoginController = LaunchAtLoginController()
     private let framePreferences = WindowFramePreferences()
     private var frameSaveTask: Task<Void, Never>?

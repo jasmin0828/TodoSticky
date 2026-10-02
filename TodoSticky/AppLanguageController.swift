@@ -6,10 +6,17 @@ import Observation
 final class AppLanguageController {
     @ObservationIgnored private var preferences: LanguagePreferences?
     @ObservationIgnored private let systemLocale: Locale
+    @ObservationIgnored private let reloadWidgetTimelines: @MainActor () -> Void
+
+    private var storedLanguage: AppLanguage
 
     var language: AppLanguage {
-        didSet {
-            preferences?.language = language
+        get { storedLanguage }
+        set {
+            guard newValue != storedLanguage, preferences != nil else { return }
+            preferences?.language = newValue
+            storedLanguage = newValue
+            reloadWidgetTimelines()
         }
     }
 
@@ -19,10 +26,12 @@ final class AppLanguageController {
 
     init(
         preferences: LanguagePreferences? = try? LanguagePreferences.appGroup(),
-        systemLocale: Locale = .current
+        systemLocale: Locale = .current,
+        reloadWidgetTimelines: @escaping @MainActor () -> Void = {}
     ) {
         self.preferences = preferences
         self.systemLocale = systemLocale
-        language = preferences?.language ?? .system
+        self.reloadWidgetTimelines = reloadWidgetTimelines
+        storedLanguage = preferences?.language ?? .system
     }
 }
