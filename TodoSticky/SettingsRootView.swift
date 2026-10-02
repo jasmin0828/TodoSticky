@@ -3,9 +3,12 @@ import SwiftUI
 struct SettingsRootView: View {
     let todoStore: TodoStore
     @Environment(AppLanguageController.self) private var languageController
+    @Environment(LaunchAtLoginController.self) private var launchAtLoginController
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         @Bindable var languageController = languageController
+        @Bindable var launchAtLoginController = launchAtLoginController
 
         Form {
             Section("settings.general") {
@@ -16,6 +19,21 @@ struct SettingsRootView: View {
                         .tag(AppLanguage.simplifiedChinese)
                     Text("settings.language.english")
                         .tag(AppLanguage.english)
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Toggle(
+                        "settings.launchAtLogin",
+                        isOn: $launchAtLoginController.isEnabled
+                    )
+                    .disabled(launchAtLoginController.isToggleDisabled)
+
+                    if let feedback = launchAtLoginController.feedback {
+                        Text(LocalizedStringKey(feedback.localizationKey))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
             }
 
@@ -45,5 +63,12 @@ struct SettingsRootView: View {
         .fixedSize(horizontal: false, vertical: true)
         .navigationTitle("settings.title")
         .environment(\.locale, languageController.locale)
+        .onAppear {
+            launchAtLoginController.refresh()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else { return }
+            launchAtLoginController.refresh()
+        }
     }
 }

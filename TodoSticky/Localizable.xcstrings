@@ -274,6 +274,34 @@
         "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "跟随系统" } }
       }
     },
+    "settings.launchAtLogin" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Launch at Login" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "登录时启动" } }
+      }
+    },
+    "settings.loginItem.approvalRequired" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Allow TodoSticky in System Settings → General → Login Items." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "请在“系统设置 → 通用 → 登录项”中允许 TodoSticky。" } }
+      }
+    },
+    "settings.loginItem.unavailable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Launch at Login is unavailable for this app." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "此应用无法使用登录时启动。" } }
+      }
+    },
+    "settings.loginItem.updateFailed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Unable to update Launch at Login." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "无法更新登录时启动设置。" } }
+      }
+    },
     "settings.title" : {
       "extractionState" : "manual",
       "localizations" : {

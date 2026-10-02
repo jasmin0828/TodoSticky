@@ -46,6 +46,7 @@ struct TodoStickyApp: App {
         Settings {
             SettingsRootView(todoStore: appDelegate.todoStore)
                 .environment(appDelegate.languageController)
+                .environment(appDelegate.launchAtLoginController)
                 .environment(\.locale, appDelegate.languageController.locale)
         }
     }
@@ -54,6 +55,7 @@ struct TodoStickyApp: App {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     let languageController = AppLanguageController()
+    let launchAtLoginController = LaunchAtLoginController()
     private let framePreferences = WindowFramePreferences()
     private var frameSaveTask: Task<Void, Never>?
     private var stickyWindow: NSWindow?
@@ -126,6 +128,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     func applicationDidBecomeActive(_ notification: Notification) {
+        launchAtLoginController.refresh()
         todoStore.reloadFromDisk()
     }
 
