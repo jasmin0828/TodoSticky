@@ -89,6 +89,21 @@ Found a problem or have an idea? [Open an issue on GitHub](https://github.com/ja
 
 遇到问题或有改进建议？欢迎在 GitHub [提交 Issue](https://github.com/jasmin0828/TodoSticky/issues)。
 
+## ☕ Support TodoSticky / 支持 TodoSticky
+
+If TodoSticky is useful to you, you can support its continued development with a small crypto tip.
+
+如果 TodoSticky 对你有所帮助，欢迎请开发者喝杯咖啡，支持项目继续更新。
+
+**USDC on Base**
+
+```text
+0x82C87099A9E0BD148B32078766CDff26cDB5164d
+```
+
+Please make sure you are sending **USDC on the Base network**.
+请确认使用 **Base 网络发送 USDC**，避免因网络选择错误造成资产损失。
+
 ## Releases / 版本
 
 ### v0.2.0
